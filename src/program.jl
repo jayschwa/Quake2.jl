@@ -13,8 +13,8 @@ function AttachShader(p::Program, s::Shader)
 end
 
 function LinkProgram(p::Program)
-	ccall( (:glLinkProgram, lib), Void, (Program,), s)
-	if !GetProgram(s, LINK_STATUS)
+	ccall( (:glLinkProgram, lib), Void, (Program,), p)
+	if !GetProgram(p, LINK_STATUS)
 		error(GetProgramInfoLog(s))
 	end
 end

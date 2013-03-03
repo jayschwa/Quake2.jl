@@ -23,21 +23,21 @@ const TEXTURE_BUFFER            = 0x8C2A
 const TRANSFORM_FEEDBACK_BUFFER = 0x8C8E
 const UNIFORM_BUFFER            = 0x8A11
 
-function BindBuffer(target::Integer, buf::Buffer)
+function BindBuffer(target::Integer, buf::Integer)
 	ccall( (:glBindBuffer, lib), Void, (GLenum, Buffer), target, buf)
 	GetError() # TODO: Benchmark overhead
 end
 
 # Buffer usage
-const GL_STREAM_DRAW  = 0x88E0
-const GL_STREAM_READ  = 0x88E1
-const GL_STREAM_COPY  = 0x88E2
-const GL_STATIC_DRAW  = 0x88E4
-const GL_STATIC_READ  = 0x88E5
-const GL_STATIC_COPY  = 0x88E6
-const GL_DYNAMIC_DRAW = 0x88E8
-const GL_DYNAMIC_READ = 0x88E9
-const GL_DYNAMIC_COPY = 0x88EA
+const STREAM_DRAW  = 0x88E0
+const STREAM_READ  = 0x88E1
+const STREAM_COPY  = 0x88E2
+const STATIC_DRAW  = 0x88E4
+const STATIC_READ  = 0x88E5
+const STATIC_COPY  = 0x88E6
+const DYNAMIC_DRAW = 0x88E8
+const DYNAMIC_READ = 0x88E9
+const DYNAMIC_COPY = 0x88EA
 
 function BufferData(target::Integer, size::Integer, data::Ptr, usage::Integer)
 	ccall( (:glBufferData, lib), Void,
@@ -47,5 +47,5 @@ function BufferData(target::Integer, size::Integer, data::Ptr, usage::Integer)
 end
 
 BufferData{T}(target::Integer, data::Array{T}, usage::Integer) =
-	BufferData(target, length(data) * sizeof(T), data, usage)
+	BufferData(target, length(data) * sizeof(T), convert(Ptr{T}, data), usage)
 

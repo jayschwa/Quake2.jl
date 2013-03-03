@@ -1,6 +1,6 @@
 function GetAttribLocation(prog::Program, name::String)
 	ret = ccall( (:glGetAttribLocation, lib), Attribute,
-		(Program, Ptr{GLchar}), prog, name)
+		(Program, Ptr{GLchar}), prog, bytestring(name))
 	if ret < 0
 		GetError()
 		error("attribute not found")
@@ -9,10 +9,14 @@ function GetAttribLocation(prog::Program, name::String)
 	end
 end
 
-function VertexAttribPointer(attr::Attribute, size::Integer, type_::GLenum,
-	normalize::Bool, stride::GLsizei, ptr::Ptr)
+function EnableVertexAttribArray(attr::Attribute)
+	ccall( (:glEnableVertexAttribArray, lib), Void, (Attribute,), attr)
+end
 
-	ccall( (:glVertexAttribPointer, lib), Void
+function VertexAttribPointer(attr::Attribute, size::Integer, type_::Integer,
+	normalize::Bool, stride::Integer, ptr::Integer)
+
+	ccall( (:glVertexAttribPointer, lib), Void,
 		(Attribute, GLint, GLenum, GLboolean, GLsizei, Ptr{GLvoid}),
 		attr, size, type_, normalize, stride, ptr)
 	GetError()
