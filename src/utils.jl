@@ -35,3 +35,9 @@ const VERSION                  = 0x1F02
 const SHADING_LANGUAGE_VERSION = 0x8B8C
 const EXTENSIONS               = 0x1F03
 
+function Viewport(width::Integer, height::Integer)
+	ccall( (:glViewport, lib), Void,
+		(GLint, GLint, GLsizei, GLsizei),
+		0, 0, width, height)
+end
+

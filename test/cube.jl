@@ -5,6 +5,7 @@ const vertex_shader_src = "
 #version 420
 
 uniform mat4 ModelMatrix;
+uniform mat4 ProjMatrix;
 
 in vec3 VertexPosition;
 in vec3 VertexColor;
@@ -14,7 +15,7 @@ out vec3 Color;
 void main()
 {
 	Color = VertexColor;
-	gl_Position = ModelMatrix * vec4(VertexPosition, 1.0);
+	gl_Position = ProjMatrix * ModelMatrix * vec4(VertexPosition, 1.0);
 }
 "
 
@@ -32,14 +33,14 @@ void main()
 "
 
 const positionData = Float32[
-	-0.5, -0.5, -0.5,
-	-0.5, -0.5, 0.5,
-	-0.5, 0.5, -0.5,
-	-0.5, 0.5, 0.5,
-	0.5, -0.5, -0.5,
-	0.5, -0.5, 0.5,
-	0.5, 0.5, -0.5,
-	0.5, 0.5, 0.5,
+	-1.5, -0.5, -3.5,
+	-1.5, -0.5, -2.5,
+	-1.5, 0.5, -3.5,
+	-1.5, 0.5, -2.5,
+	-0.5, -0.5, -3.5,
+	-0.5, -0.5, -2.5,
+	-0.5, 0.5, -3.5,
+	-0.5, 0.5, -2.5,
 ]
 
 const colorData = Float32[
@@ -68,7 +69,36 @@ const indices = Uint8[
 	1, 7, 5,
 ]
 
-const modelMatrix = float32(eye(4))
+modelMatrix = float32(eye(4))
+
+const near = 1
+const far = 10
+projMatrix = float32(eye(4))
+fov = 90.0
+
+function updateProjMatrix(width::Cint, height::Cint)
+	GL.Viewport(width, height)
+
+	fov_w = fov
+	fov_h = fov
+	if width > height
+		fov_h *= height / width
+	else
+		fov_w *= width / height
+	end
+	w = 1 / tan(fov_w * pi / 360)
+	h = 1 / tan(fov_h * pi / 360)
+	Q = far / (far - near)
+
+	projMatrix[1] = w
+	projMatrix[6] = h
+	projMatrix[11] = Q
+	projMatrix[12] = -Q * near
+	projMatrix[15] = 1
+	projMatrix[16] = 0
+
+	return
+end
 
 GLFW.Init()
 GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MAJOR, 4)
@@ -77,6 +107,7 @@ GLFW.OpenWindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
 GLFW.OpenWindowHint(GLFW.OPENGL_FORWARD_COMPAT, 1)
 GLFW.OpenWindow(0, 0, 0, 0, 0, 0, 0, 0, GLFW.WINDOW)
 GLFW.SetWindowTitle("GL for Julia")
+GLFW.SetWindowSizeCallback(updateProjMatrix)
 
 println("Vendor:   ", GL.GetString(GL.VENDOR))
 println("Renderer: ", GL.GetString(GL.RENDERER))
@@ -97,6 +128,7 @@ GL.AttachShader(prog, fragment_shader)
 GL.LinkProgram(prog)
 
 uModel = GL.GetUniformLocation(prog, "ModelMatrix")
+uProj = GL.GetUniformLocation(prog, "ProjMatrix")
 aPosition = GL.GetAttribLocation(prog, "VertexPosition")
 aColor = GL.GetAttribLocation(prog, "VertexColor")
 
@@ -125,6 +157,7 @@ tic()
 while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UseProgram(prog)
 	GL.UniformMatrix4fv(uModel, modelMatrix)
+	GL.UniformMatrix4fv(uProj, projMatrix)
 	GL.BindVertexArray(vao)
 	GL.DrawElements(GL.TRIANGLE_STRIP, indices)
 	GL.BindVertexArray(0)
