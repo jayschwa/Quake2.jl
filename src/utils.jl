@@ -2,6 +2,34 @@
 #   Utilities
 ################################################################################
 
+# Masks
+const DEPTH_BUFFER_BIT   = 0x00000100
+const STENCIL_BUFFER_BIT = 0x00000400
+const COLOR_BUFFER_BIT   = 0x00004000
+
+function Clear(mask::Integer)
+	ccall( (:glClear, lib), Void, (GLuint,), mask)
+end
+
+# Capabilities
+const BLEND                    = 0x0BE2
+const CULL_FACE                = 0x0B44
+const DEPTH_TEST               = 0x0B71
+const DITHER                   = 0x0BD0
+const POLYGON_OFFSET_FILL      = 0x8037
+const SAMPLE_ALPHA_TO_COVERAGE = 0x809E
+const SAMPLE_COVERAGE          = 0x80A0
+const SCISSOR_TEST             = 0x0C11
+const STENCIL_TEST             = 0x0B90
+
+function Disable(cap::Integer)
+	ccall( (:glDisable, lib), Void, (GLenum,), cap)
+end
+
+function Enable(cap::Integer)
+	ccall( (:glEnable, lib), Void, (GLenum,), cap)
+end
+
 # Error codes
 const NO_ERROR          = 0
 const INVALID_ENUM      = 0x0500

@@ -5,6 +5,7 @@ const vertex_shader_src = "
 #version 420
 
 uniform mat4 ModelMatrix;
+uniform mat4 ViewMatrix;
 uniform mat4 ProjMatrix;
 
 in vec3 VertexPosition;
@@ -15,7 +16,7 @@ out vec3 Color;
 void main()
 {
 	Color = VertexColor;
-	gl_Position = ProjMatrix * ModelMatrix * vec4(VertexPosition, 1.0);
+	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * vec4(VertexPosition, 1.0);
 }
 "
 
@@ -33,14 +34,14 @@ void main()
 "
 
 const positionData = Float32[
-	-1.5, -0.5, -3.5,
-	-1.5, -0.5, -2.5,
-	-1.5, 0.5, -3.5,
-	-1.5, 0.5, -2.5,
-	-0.5, -0.5, -3.5,
-	-0.5, -0.5, -2.5,
-	-0.5, 0.5, -3.5,
-	-0.5, 0.5, -2.5,
+	-0.5, -0.5, -0.5,
+	-0.5, -0.5, 0.5,
+	-0.5, 0.5, -0.5,
+	-0.5, 0.5, 0.5,
+	0.5, -0.5, -0.5,
+	0.5, -0.5, 0.5,
+	0.5, 0.5, -0.5,
+	0.5, 0.5, 0.5,
 ]
 
 const colorData = Float32[
@@ -76,6 +77,14 @@ const far = 10
 projMatrix = float32(eye(4))
 fov = 90.0
 
+function translationMatrix(x::Number, y::Number, z::Number)
+	T = float32(eye(4))
+	T[13] = float32(x)
+	T[14] = float32(y)
+	T[15] = float32(z)
+	return T
+end
+
 function updateProjMatrix(width::Cint, height::Cint)
 	GL.Viewport(width, height)
 
@@ -105,9 +114,12 @@ GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MAJOR, 4)
 GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MINOR, 2)
 GLFW.OpenWindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
 GLFW.OpenWindowHint(GLFW.OPENGL_FORWARD_COMPAT, 1)
-GLFW.OpenWindow(0, 0, 0, 0, 0, 0, 0, 0, GLFW.WINDOW)
+GLFW.OpenWindow(0, 0, 8, 8, 8, 8, 16, 0, GLFW.WINDOW)
 GLFW.SetWindowTitle("GL for Julia")
 GLFW.SetWindowSizeCallback(updateProjMatrix)
+
+GL.Enable(GL.CULL_FACE)
+GL.Enable(GL.DEPTH_TEST)
 
 println("Vendor:   ", GL.GetString(GL.VENDOR))
 println("Renderer: ", GL.GetString(GL.RENDERER))
@@ -128,6 +140,7 @@ GL.AttachShader(prog, fragment_shader)
 GL.LinkProgram(prog)
 
 uModel = GL.GetUniformLocation(prog, "ModelMatrix")
+uView = GL.GetUniformLocation(prog, "ViewMatrix")
 uProj = GL.GetUniformLocation(prog, "ProjMatrix")
 aPosition = GL.GetAttribLocation(prog, "VertexPosition")
 aColor = GL.GetAttribLocation(prog, "VertexColor")
@@ -153,20 +166,71 @@ GL.BindVertexArray(0)
 
 frames = 0
 tic()
+tic()
+
+cam_speed = 0.5 # unit/sec
+cam_x = 0
+cam_y = 0
+cam_z = 0
+
+m_captured = false
+function m_capture(capture::Bool)
+	if capture
+		GLFW.Disable(GLFW.MOUSE_CURSOR)
+		GLFW.SetMousePos(0, 0)
+		global m_captured = true
+	else
+		GLFW.Enable(GLFW.MOUSE_CURSOR)
+		global m_captured = false
+	end
+end
+m_capture() = m_captured
 
 while GLFW.GetWindowParam(GLFW.OPENED)
+	dist = cam_speed * toq()
+	if m_capture()
+		if GLFW.GetKey(',')
+			cam_z -= dist
+		end
+		if GLFW.GetKey('A')
+			cam_x -= dist
+		end
+		if GLFW.GetKey('O')
+			cam_z += dist
+		end
+		if GLFW.GetKey('E')
+			cam_x += dist
+		end
+		if GLFW.GetKey(' ')
+			cam_y += dist
+		end
+		if GLFW.GetKey(GLFW.KEY_LCTRL)
+			cam_y -= dist
+		end
+	end
+	if GLFW.GetMouseButton(GLFW.MOUSE_BUTTON_LEFT)
+		m_capture(true)
+	end
+	if GLFW.GetKey(GLFW.KEY_ESC)
+		m_capture(false)
+	end
+	tic()
+
+	GL.Clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT)
 	GL.UseProgram(prog)
 	GL.UniformMatrix4fv(uModel, modelMatrix)
+	GL.UniformMatrix4fv(uView, translationMatrix(-cam_x, -cam_y, -cam_z))
 	GL.UniformMatrix4fv(uProj, projMatrix)
 	GL.BindVertexArray(vao)
-	GL.DrawElements(GL.TRIANGLE_STRIP, indices)
+	GL.DrawElements(GL.TRIANGLES, indices)
 	GL.BindVertexArray(0)
 
 	GLFW.SwapBuffers()
 	frames += 1
 end
 
-seconds = toq()
+toq()
+seconds = toc()
 println(frames / seconds, " FPS")
 
 GLFW.Terminate()
