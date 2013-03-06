@@ -73,7 +73,7 @@ const indices = Uint8[
 const near = 1
 const far = 1000
 projMatrix = float32(eye(4))
-fov = 90.0
+fov = 60.0
 
 function translationMatrix(x::Number, y::Number, z::Number)
 	T = float32(eye(4))
