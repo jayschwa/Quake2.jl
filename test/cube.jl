@@ -199,24 +199,15 @@ function sphereToCartesian(yaw::Number, pitch::Number)
 	return Float32[x, y, z]
 end
 
-function rotationMatrix(eyeDir::Vector, upDir::Vector)
+function rotationMatrix{T<:Real}(eyeDir::Vector{T}, upDir::Vector{T})
 	rightDir = cross(eyeDir, upDir)
 	rightDir /= norm(rightDir)
 	upDir = cross(rightDir, eyeDir)
 
-	rotMat = float32(eye(4))
-
-	rotMat[1] = rightDir[1]
-	rotMat[5] = rightDir[2]
-	rotMat[9] = rightDir[3]
-
-	rotMat[2] = upDir[1]
-	rotMat[6] = upDir[2]
-	rotMat[10] = upDir[3]
-
-	rotMat[3] = -eyeDir[1]
-	rotMat[7] = -eyeDir[2]
-	rotMat[11] = -eyeDir[3]
+	rotMat = eye(T, 4)
+	rotMat[1,1:3] = rightDir
+	rotMat[2,1:3] = upDir
+	rotMat[3,1:3] = -eyeDir
 
 	return rotMat
 end
