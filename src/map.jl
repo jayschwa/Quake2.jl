@@ -136,7 +136,7 @@ m_captured = false
 function m_capture(capture::Bool)
 	if capture
 		GLFW.Disable(GLFW.MOUSE_CURSOR)
-		#GLFW.SetMousePos(0, 0)
+		GLFW.SetMousePos(0, 0)
 		global m_captured = true
 	else
 		GLFW.Enable(GLFW.MOUSE_CURSOR)
@@ -172,14 +172,17 @@ function rotationMatrix{T<:Real}(eyeDir::Vector{T}, upDir::Vector{T})
 	return rotMat
 end
 
+m_x = 0
+m_y = 0
+
 while GLFW.GetWindowParam(GLFW.OPENED)
 	if m_capture()
-		m_pos = GLFW.GetMousePos()
-		m_pos = (-m_pos[1], -m_pos[2])
-		eyeDir = sphereToCartesian(m_pos...)
-	else
-		eyeDir = sphereToCartesian(0, 0)
+		m_delta = GLFW.GetMousePos()
+		m_x -= m_delta[1]
+		m_y -= m_delta[2]
+		GLFW.SetMousePos(0, 0)
 	end
+	eyeDir = sphereToCartesian(m_x, m_y)
 	rightDir = cross(eyeDir, Float32[0, 0, 1])
 	rightDir /= norm(rightDir)
 	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
@@ -206,7 +209,6 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 		if GLFW.GetKey(GLFW.KEY_LCTRL)
 			cam_pos[3] -= dist
 		end
-		#GLFW.SetMousePos(0, 0)
 	end
 	if GLFW.GetMouseButton(GLFW.MOUSE_BUTTON_LEFT)
 		m_capture(true)
