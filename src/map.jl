@@ -145,13 +145,24 @@ function m_capture(capture::Bool)
 end
 m_capture() = m_captured
 
+# cursor xy to degree ratio
 const m_pitch = 0.05
 const m_yaw = 0.05
 
-function sphereToCartesian(yaw::Number, pitch::Number)
-	# apply scalar and convert to radians
-	yaw = m_yaw * yaw * (pi / 180)
-	pitch = m_pitch * pitch * (pi / 180)
+cam_yaw = 0
+cam_pitch = 0
+
+function mouseToSphere(xdelta::Real, ydelta::Real)
+	global cam_yaw -= m_yaw * xdelta
+	global cam_pitch -= m_pitch * ydelta
+	global cam_pitch = clamp(cam_pitch, -89, 89)
+	return (cam_yaw, cam_pitch)
+end
+
+function sphereToCartesian(yaw::Real, pitch::Real)
+	# convert to radians
+	yaw *= (pi / 180)
+	pitch *= (pi / 180)
 
 	x = cos(yaw)*cos(pitch)
 	y = sin(yaw)*cos(pitch)
@@ -172,17 +183,12 @@ function rotationMatrix{T<:Real}(eyeDir::Vector{T}, upDir::Vector{T})
 	return rotMat
 end
 
-m_x = 0
-m_y = 0
-
 while GLFW.GetWindowParam(GLFW.OPENED)
 	if m_capture()
-		m_delta = GLFW.GetMousePos()
-		m_x -= m_delta[1]
-		m_y -= m_delta[2]
+		mouseToSphere(GLFW.GetMousePos()...)
 		GLFW.SetMousePos(0, 0)
 	end
-	eyeDir = sphereToCartesian(m_x, m_y)
+	eyeDir = sphereToCartesian(cam_yaw, cam_pitch)
 	rightDir = cross(eyeDir, Float32[0, 0, 1])
 	rightDir /= norm(rightDir)
 	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
