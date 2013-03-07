@@ -16,7 +16,7 @@ out vec3 Color;
 
 void main()
 {
-	Color = VertexPosition / 1000 + vec3(0.2, 0.2, 0.2);
+	Color = VertexPosition / 2000 + vec3(0.5, 0.5, 0.5);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * vec4(VertexPosition, 1.0);
 }
 "
@@ -37,7 +37,7 @@ void main()
 const near = 4
 const far = 16384
 projMatrix = float32(eye(4))
-fov = 60.0
+fov = 45.0
 
 function translationMatrix(x::Number, y::Number, z::Number)
 	T = float32(eye(4))
