@@ -185,6 +185,9 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
 	dist = cam_speed * toq()
 	if m_capture()
+		if GLFW.GetKey(GLFW.KEY_LSHIFT)
+			dist *= 3
+		end
 		if GLFW.GetKey(',')
 			cam_pos += dist * eyeDir
 		end
