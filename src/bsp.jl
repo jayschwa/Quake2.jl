@@ -34,25 +34,6 @@ type Header
 	#lumps::Array{Lump,1}(19)
 end
 
-#func (hdr *Header) Check() error {
-#	if hdr.Signature != Magic {
-#		return ErrFormat
-#	}
-#	if lumps[Vertices].Length%12 != 0 {
-#		return ErrFormat
-#	}
-#	if lumps[Faces].Length%Uint32(unsafe.Sizeof(Face{})) != 0 {
-#		return ErrFormat
-#	}
-#	if lumps[FaceEdgeTable].Length%Uint32(unsafe.Sizeof(FaceEdge(0))) != 0 {
-#		return ErrFormat
-#	}
-#	if lumps[Edges].Length%Uint32(unsafe.Sizeof(Edge{})) != 0 {
-#		return ErrFormat
-#	}
-#	return nil
-#}
-
 type Face
 	plane::Uint16
 	plane_side::Uint16
@@ -72,7 +53,7 @@ end
 
 type Bsp
 	vertices::Array{Float32,1}
-	indices::Array{Uint16,1}
+	faces::Array{Array{Uint16,1},1}
 end
 
 function bspRead(io::IO)
@@ -95,8 +76,9 @@ function bspRead(io::IO)
 	seek(io, lumps[Edges].offset)
 	edges = read(io, Edge, count)
 
-	indices = Array(Uint16, 0)
+	indicesByFace = Array(Array{Uint16,1}, 0)
 	for face = faces
+		indices = Array(Uint16, 0)
 		first = face.first_edge + 1
 		last = first + face.num_edges - 1
 		for idx = face2edge[first:last]
@@ -108,7 +90,8 @@ function bspRead(io::IO)
 			push!(indices, v1)
 			push!(indices, v2)
 		end
+		push!(indicesByFace, indices)
 	end
 
-	return Bsp(vertices, indices)
+	return Bsp(vertices, indicesByFace)
 end

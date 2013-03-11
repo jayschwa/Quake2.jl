@@ -16,7 +16,8 @@ out vec3 Color;
 
 void main()
 {
-	Color = VertexPosition / 2000 + vec3(0.5, 0.5, 0.5);
+	const float cs = 1000.0;
+	Color = vec3(0.5, 0.5, 0.5) + mod(abs(VertexPosition), cs) / (cs * 2);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * vec4(VertexPosition, 1.0);
 }
 "
@@ -82,10 +83,17 @@ GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MAJOR, 4)
 GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MINOR, 2)
 GLFW.OpenWindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
 GLFW.OpenWindowHint(GLFW.OPENGL_FORWARD_COMPAT, 1)
-GLFW.OpenWindow(0, 0, 8, 8, 8, 8, 16, 0, GLFW.WINDOW)
+GLFW.OpenWindow(0, 0, 0, 0, 0, 0, 0, 0, GLFW.WINDOW)
 GLFW.SetWindowTitle("Quake 2.jl")
 GLFW.SetWindowSizeCallback(updateProjMatrix)
 GLFW.SwapInterval(0)
+
+println("Red bits:     ", GLFW.GetWindowParam(GLFW.RED_BITS))
+println("Green bits:   ", GLFW.GetWindowParam(GLFW.GREEN_BITS))
+println("Blue bits:    ", GLFW.GetWindowParam(GLFW.BLUE_BITS))
+println("Alpha bits:   ", GLFW.GetWindowParam(GLFW.ALPHA_BITS))
+println("Depth bits:   ", GLFW.GetWindowParam(GLFW.DEPTH_BITS))
+println("Stencil bits: ", GLFW.GetWindowParam(GLFW.STENCIL_BITS))
 
 GL.Enable(GL.CULL_FACE)
 GL.Enable(GL.DEPTH_TEST)
@@ -232,7 +240,9 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 	GL.BindVertexArray(vao)
-	GL.DrawElements(GL.LINES, bsp.indices)
+	for face = bsp.faces
+		GL.DrawElements(GL.LINES, face)
+	end
 	GL.BindVertexArray(0)
 
 	GLFW.SwapBuffers()
