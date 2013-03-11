@@ -100,75 +100,15 @@ function bspRead(io::IO)
 		first = face.first_edge + 1
 		last = first + face.num_edges - 1
 		for idx = face2edge[first:last]
+			v1 = edges[abs(idx)].v1
+			v2 = edges[abs(idx)].v2
 			if idx < 0
-				idx -= 1
-				push!(indices, edges[-idx].v2)
-				push!(indices, edges[-idx].v1)
-			else
-				idx += 1
-				push!(indices, edges[idx].v1)
-				push!(indices, edges[idx].v2)
+				v1, v2 = v2, v1
 			end
+			push!(indices, v1)
+			push!(indices, v2)
 		end
 	end
 
 	return Bsp(vertices, indices)
 end
-
-#func NewReader(src io.ReadSeeker) (*Reader, error) {
-#	hdr := new(Header)
-#	src.Seek(0, 0)
-#	err := binary.Read(src, binary.LittleEndian, hdr)
-#	if err != nil {
-#		return nil, err
-#	}
-#	err = hdr.Check()
-#	if err != nil {
-#		return nil, err
-#	}
-#	return &Reader{hdr, src}, nil
-#}
-#
-#func (bsp Reader) Vertices() ([]float32, error) {
-#	count := bsp.lumps[Vertices].Length / 4
-#	poInts := make([]float32, count)
-#	bsp.src.Seek(Int64(bsp.lumps[Vertices].Offset), 0)
-#	// FIXME: Handle error
-#	_ = binary.Read(bsp.src, binary.LittleEndian, &poInts)
-#	return poInts, nil
-#}
-#
-#func (bsp Reader) Indices() ([]Uint16, error) {
-#	count := bsp.lumps[Faces].Length / Uint32(unsafe.Sizeof(Face{}))
-#	faces := make([]Face, count)
-#	bsp.src.Seek(Int64(bsp.lumps[Faces].Offset), 0)
-#	binary.Read(bsp.src, binary.LittleEndian, &faces)
-#
-#	count = bsp.lumps[FaceEdgeTable].Length / Uint32(unsafe.Sizeof(FaceEdge(0)))
-#	face2edge := make([]FaceEdge, count)
-#	bsp.src.Seek(Int64(bsp.lumps[FaceEdgeTable].Offset), 0)
-#	binary.Read(bsp.src, binary.LittleEndian, &face2edge)
-#
-#	count = bsp.lumps[Faces].Length / Uint32(unsafe.Sizeof(Edge{}))
-#	edges := make([]Edge, count)
-#	bsp.src.Seek(Int64(bsp.lumps[Edges].Offset), 0)
-#	binary.Read(bsp.src, binary.LittleEndian, &edges)
-#
-#	indices := make([]Uint16, 0)
-#
-#	for _, face := range faces {
-#		from := face.First_edge
-#		to := from + Uint32(face.Num_edges)
-#		for _, idx := range face2edge[from:to] {
-#			if idx < 0 {
-#				edge := edges[-idx]
-#				indices = append(indices, edge.V2, edge.V1)
-#			} else {
-#				edge := edges[idx]
-#				indices = append(indices, edge.V1, edge.V2)
-#			}
-#		}
-#	}
-#
-#	return indices, nil
-#}
