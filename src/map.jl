@@ -16,8 +16,8 @@ out vec3 Color;
 
 void main()
 {
-	const float cs = 1000.0;
-	Color = vec3(0.5, 0.5, 0.5) + mod(abs(VertexPosition), cs) / (cs * 2);
+	const float cs = 500.0;
+	Color = mod(abs(VertexPosition), cs) / cs;
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * vec4(VertexPosition, 1.0);
 }
 "
@@ -38,7 +38,7 @@ void main()
 const near = 4
 const far = 16384
 projMatrix = float32(eye(4))
-fov = 45.0
+fov = 90.0
 
 function translationMatrix(x::Number, y::Number, z::Number)
 	T = float32(eye(4))
@@ -53,23 +53,27 @@ modelMatrix = translationMatrix(0, 0, 0)
 function updateProjMatrix(width::Cint, height::Cint)
 	GL.Viewport(width, height)
 
-	fov_w = fov
-	fov_h = fov
-	if width > height
-		fov_h *= height / width
-	else
-		fov_w *= width / height
-	end
-	w = 1 / tan(fov_w * pi / 360)
-	h = 1 / tan(fov_h * pi / 360)
-	Q = far / (far - near)
+	aspect = width / height
+	ymax = near * tan(fov * pi / 360)
+	ymin = -ymax
+	xmin = ymin * aspect
+	xmax = ymax * aspect
 
-	projMatrix[1] = w
-	projMatrix[6] = h
-	projMatrix[11] = Q
-	projMatrix[12] = -Q * near
-	projMatrix[15] = 1
-	projMatrix[16] = 0
+	x = (2*near) / (xmax-xmin)
+	y = (2*near) / (ymax-ymin)
+	a = (xmax+xmin) / (xmax-xmin)
+	b = (ymax+ymin) / (ymax-ymin)
+	c = -(far+near) / (far-near)
+	d = -(2*far*near) / (far-near)
+
+	projMatrix[1,1] = x
+	projMatrix[1,3] = a
+	projMatrix[2,2] = y
+	projMatrix[2,3] = b
+	projMatrix[3,3] = c
+	projMatrix[3,4] = d
+	projMatrix[4,3] = -1
+	projMatrix[4,4] = 0
 
 	return
 end
