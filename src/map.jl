@@ -83,7 +83,7 @@ GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MINOR, 2)
 GLFW.OpenWindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
 GLFW.OpenWindowHint(GLFW.OPENGL_FORWARD_COMPAT, 1)
 GLFW.OpenWindow(0, 0, 8, 8, 8, 8, 16, 0, GLFW.WINDOW)
-GLFW.SetWindowTitle("GL for Julia")
+GLFW.SetWindowTitle("Quake 2.jl")
 GLFW.SetWindowSizeCallback(updateProjMatrix)
 GLFW.SwapInterval(0)
 
