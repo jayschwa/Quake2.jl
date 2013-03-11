@@ -80,15 +80,19 @@ function bspRead(io::IO)
 	for face = faces
 		indices = Array(Uint16, 0)
 		first = face.first_edge + 1
+		hub = edges[abs(face2edge[first])+1].v1
 		last = first + face.num_edges - 1
 		for idx = face2edge[first:last]
-			v1 = edges[abs(idx)].v1
-			v2 = edges[abs(idx)].v2
+			v1 = edges[abs(idx)+1].v1
+			v2 = edges[abs(idx)+1].v2
 			if idx < 0
 				v1, v2 = v2, v1
 			end
-			push!(indices, v1)
-			push!(indices, v2)
+			if v1 != hub && v2 != hub
+				push!(indices, hub)
+				push!(indices, v2)
+				push!(indices, v1)
+			end
 		end
 		push!(indicesByFace, indices)
 	end

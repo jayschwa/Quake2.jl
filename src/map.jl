@@ -241,7 +241,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 	GL.BindVertexArray(vao)
 	for face = bsp.faces
-		GL.DrawElements(GL.LINES, face)
+		GL.DrawElements(GL.TRIANGLES, face)
 	end
 	GL.BindVertexArray(0)
 
