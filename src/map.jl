@@ -16,7 +16,7 @@ out vec3 Color;
 
 void main()
 {
-	const float cs = 500.0;
+	const float cs = 2000.0;
 	Color = mod(abs(VertexPosition), cs) / cs;
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * vec4(VertexPosition, 1.0);
 }
