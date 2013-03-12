@@ -10,28 +10,32 @@ uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
 uniform mat4 ProjMatrix;
 
+uniform vec4 TexU;
+uniform vec4 TexV;
+
 in vec3 VertexPosition;
 
-out vec3 Color;
+out vec2 TexCoord;
 
 void main()
 {
-	const float cs = 2000.0;
-	Color = mod(abs(VertexPosition), cs) / cs;
-	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * vec4(VertexPosition, 1.0);
+	const vec4 pos = vec4(VertexPosition, 1.0);
+	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
+	TexCoord.s = dot(TexU, pos);
+	TexCoord.t = dot(TexV, pos);
 }
 "
 
 const fragment_shader_src = "
 #version 420
 
-in vec3 Color;
+in vec2 TexCoord;
 
 out vec4 FragColor;
 
 void main()
 {
-	FragColor = vec4(Color, 1.0);
+	FragColor = vec4(TexCoord.s, 1.0, TexCoord.t, 1.0);
 }
 "
 
@@ -123,6 +127,10 @@ GL.LinkProgram(prog)
 uModel = GL.GetUniformLocation(prog, "ModelMatrix")
 uView = GL.GetUniformLocation(prog, "ViewMatrix")
 uProj = GL.GetUniformLocation(prog, "ProjMatrix")
+
+uTexU = GL.GetUniformLocation(prog, "TexU")
+uTexV = GL.GetUniformLocation(prog, "TexV")
+
 aPosition = GL.GetAttribLocation(prog, "VertexPosition")
 
 vao = GL.GenVertexArray()
@@ -237,6 +245,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	tic()
 
 	GL.Clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT)
+
 	GL.UseProgram(prog)
 	GL.UniformMatrix4fv(uModel, modelMatrix)
 	transMat = translationMatrix(-cam_pos[1], -cam_pos[2], -cam_pos[3])
@@ -244,9 +253,13 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 	GL.BindVertexArray(vao)
+
 	for face = bsp.faces
-		GL.DrawElements(GL.TRIANGLES, face)
+		GL.Uniform4f(uTexU, face.tex_u)
+		GL.Uniform4f(uTexV, face.tex_v)
+		GL.DrawElements(GL.TRIANGLES, face.indices)
 	end
+
 	GL.BindVertexArray(0)
 
 	GLFW.SwapBuffers()

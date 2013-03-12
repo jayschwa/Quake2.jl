@@ -51,9 +51,15 @@ type Edge
 	v2::Uint16
 end
 
+type FaceInfo
+	indices::Array{Uint16,1}
+	tex_u::Array{Float32,1}
+	tex_v::Array{Float32,1}
+end
+
 type Bsp
 	vertices::Array{Float32,1}
-	faces::Array{Array{Uint16,1},1}
+	faces::Array{FaceInfo,1}
 end
 
 function bspRead(io::IO)
@@ -76,7 +82,7 @@ function bspRead(io::IO)
 	seek(io, lumps[Edges].offset)
 	edges = read(io, Edge, count)
 
-	indicesByFace = Array(Array{Uint16,1}, 0)
+	faceinfos = Array(FaceInfo, 0)
 	for face = faces
 		indices = Array(Uint16, 0)
 		first = face.first_edge + 1
@@ -94,8 +100,13 @@ function bspRead(io::IO)
 				push!(indices, v1)
 			end
 		end
-		push!(indicesByFace, indices)
+
+		seek(io, lumps[TexInfo].offset + face.tex_info * 76)
+		tex_u = read(io, Float32, 4)
+		tex_v = read(io, Float32, 4)
+
+		push!(faceinfos, FaceInfo(indices, tex_u, tex_v))
 	end
 
-	return Bsp(vertices, indicesByFace)
+	return Bsp(vertices, faceinfos)
 end
