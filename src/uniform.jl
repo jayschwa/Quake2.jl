@@ -11,6 +11,13 @@ end
 
 # TODO: All uniform functions
 
+function Uniform2f(u::Uniform, data::Array{Float32,1})
+	ccall( (:glUniform2fv, lib), Void,
+		(Uniform, GLsizei, Ptr{GLfloat}),
+		u, 1, data)
+	GetError()
+end
+
 function Uniform4f(u::Uniform, data::Array{Float32,1})
 	ccall( (:glUniform4fv, lib), Void,
 		(Uniform, GLsizei, Ptr{GLfloat}),

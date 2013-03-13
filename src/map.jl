@@ -12,6 +12,7 @@ uniform mat4 ProjMatrix;
 
 uniform vec4 TexU;
 uniform vec4 TexV;
+uniform vec2 LightmapSize;
 
 in vec3 VertexPosition;
 
@@ -21,8 +22,8 @@ void main()
 {
 	const vec4 pos = vec4(VertexPosition, 1.0);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
-	TexCoord.s = dot(TexU, pos);
-	TexCoord.t = dot(TexV, pos);
+	TexCoord.s = dot(TexU, pos) / (LightmapSize.x * 16);
+	TexCoord.t = dot(TexV, pos) / (LightmapSize.y * 16);
 }
 "
 
@@ -35,7 +36,7 @@ out vec4 FragColor;
 
 void main()
 {
-	FragColor = vec4(TexCoord.s, 1.0, TexCoord.t, 1.0);
+	FragColor = vec4(TexCoord.s, 0.0, TexCoord.t, 1.0);
 }
 "
 
@@ -130,6 +131,7 @@ uProj = GL.GetUniformLocation(prog, "ProjMatrix")
 
 uTexU = GL.GetUniformLocation(prog, "TexU")
 uTexV = GL.GetUniformLocation(prog, "TexV")
+uLmSize = GL.GetUniformLocation(prog, "LightmapSize")
 
 aPosition = GL.GetAttribLocation(prog, "VertexPosition")
 
@@ -257,6 +259,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	for face = bsp.faces
 		GL.Uniform4f(uTexU, face.tex_u)
 		GL.Uniform4f(uTexV, face.tex_v)
+		GL.Uniform2f(uLmSize, face.lm_size)
 		GL.DrawElements(GL.TRIANGLES, face.indices)
 	end
 
