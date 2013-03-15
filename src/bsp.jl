@@ -55,8 +55,8 @@ type FaceInfo
 	indices::Array{Uint16,1}
 	tex_u::Array{Float32,1}
 	tex_v::Array{Float32,1}
-	lm_offset::Uint32
-	lm_size::Array{Float32,1}
+	lm_id::Uint32
+	lm_size::Array{Uint32,1}
 end
 
 type Bsp
@@ -141,7 +141,7 @@ function bspRead(io::IO)
 		if width > 16 || height > 16
 			println(width, "x", height)
 		end
-		lm_size = Float32[width, height]
+		lm_size = Uint32[width, height]
 
 		push!(faceinfos, FaceInfo(indices, tex_u, tex_v, uint32(face.lightmap_offset+1), lm_size))
 	end

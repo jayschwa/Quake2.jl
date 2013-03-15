@@ -28,6 +28,7 @@ typealias Object      GLuint
 typealias Buffer      Object
 typealias Program     Object
 typealias Shader      Object
+typealias Texture     Object
 typealias VertexArray Object
 
 typealias Attribute GLint
@@ -71,6 +72,7 @@ include("buffer.jl")
 include("draw.jl")
 include("program.jl")
 include("shader.jl")
+include("texture.jl")
 include("uniform.jl")
 include("utils.jl")
 include("vertexarray.jl")

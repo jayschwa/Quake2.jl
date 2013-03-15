@@ -12,7 +12,7 @@ uniform mat4 ProjMatrix;
 
 uniform vec4 TexU;
 uniform vec4 TexV;
-uniform vec2 LightmapSize;
+uniform uvec2 LightmapSize;
 
 in vec3 VertexPosition;
 
@@ -30,13 +30,16 @@ void main()
 const fragment_shader_src = "
 #version 420
 
+uniform sampler2D Lightmap;
+
 in vec2 TexCoord;
 
 out vec4 FragColor;
 
 void main()
 {
-	FragColor = vec4(TexCoord.s, 0.0, TexCoord.t, 1.0);
+	FragColor = texture(Lightmap, TexCoord);
+	FragColor.a = 1.0;
 }
 "
 
@@ -131,9 +134,33 @@ uProj = GL.GetUniformLocation(prog, "ProjMatrix")
 
 uTexU = GL.GetUniformLocation(prog, "TexU")
 uTexV = GL.GetUniformLocation(prog, "TexV")
+uLightmap = GL.GetUniformLocation(prog, "Lightmap")
 uLmSize = GL.GetUniformLocation(prog, "LightmapSize")
 
 aPosition = GL.GetAttribLocation(prog, "VertexPosition")
+
+# Create textures from lightmap data
+for face = bsp.faces
+	w, h = face.lm_size[1], face.lm_size[2]
+	println(w, "x", h)
+	from = face.lm_id
+	to = from + w * h * 3 - 1
+#	data = bsp.lightmaps[from:to]
+	data = fill(uint8(255), w * h * 4)
+
+	tex = GL.GenTexture()
+	GL.BindTexture(GL.TEXTURE_2D, tex)
+
+	GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, w, h, GL.RGB, data)
+
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
+
+	face.lm_id = tex
+	GL.BindTexture(GL.TEXTURE_2D, 0)
+end
 
 vao = GL.GenVertexArray()
 GL.BindVertexArray(vao)
@@ -254,13 +281,18 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	viewMat = rotMat * transMat
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
+	
+	GL.Uniform1i(uLightmap, 0)
 	GL.BindVertexArray(vao)
 
 	for face = bsp.faces
 		GL.Uniform4f(uTexU, face.tex_u)
 		GL.Uniform4f(uTexV, face.tex_v)
-		GL.Uniform2f(uLmSize, face.lm_size)
+		GL.BindTexture(GL.TEXTURE_2D, face.lm_id)
+		GL.Uniform2ui(uLmSize, face.lm_size)
 		GL.DrawElements(GL.TRIANGLES, face.indices)
+		GL.GetError()
+		GL.BindTexture(GL.TEXTURE_2D, 0)
 	end
 
 	GL.BindVertexArray(0)
