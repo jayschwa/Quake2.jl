@@ -12,34 +12,37 @@ uniform mat4 ProjMatrix;
 
 uniform vec4 TexU;
 uniform vec4 TexV;
-uniform uvec2 LightmapSize;
+
+uniform vec3 FaceNormal;
 
 in vec3 VertexPosition;
 
-out vec2 TexCoord;
+out vec3 FragPosition;
 
 void main()
 {
+	FragPosition = VertexPosition;
 	const vec4 pos = vec4(VertexPosition, 1.0);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
-	TexCoord.s = dot(TexU, pos) / (LightmapSize.x * 16);
-	TexCoord.t = dot(TexV, pos) / (LightmapSize.y * 16);
 }
 "
 
 const fragment_shader_src = "
 #version 420
 
-uniform sampler2D Lightmap;
+uniform vec3 Light1Position;
+uniform vec3 Light1Color;
+uniform float Light1Power;
 
-in vec2 TexCoord;
+in vec3 FragPosition;
 
 out vec4 FragColor;
 
 void main()
 {
-	FragColor = texture(Lightmap, TexCoord);
-	FragColor.a = 1.0;
+	const float power = (Light1Power - distance(Light1Position, FragPosition)) / Light1Power;
+	const vec3 LightColor = Light1Color * pow(clamp(power, 0.0, 1.0), 2);
+	FragColor = vec4(LightColor, 1.0);
 }
 "
 
@@ -132,35 +135,10 @@ uModel = GL.GetUniformLocation(prog, "ModelMatrix")
 uView = GL.GetUniformLocation(prog, "ViewMatrix")
 uProj = GL.GetUniformLocation(prog, "ProjMatrix")
 
-uTexU = GL.GetUniformLocation(prog, "TexU")
-uTexV = GL.GetUniformLocation(prog, "TexV")
-uLightmap = GL.GetUniformLocation(prog, "Lightmap")
-uLmSize = GL.GetUniformLocation(prog, "LightmapSize")
+#uTexU = GL.GetUniformLocation(prog, "TexU")
+#uTexV = GL.GetUniformLocation(prog, "TexV")
 
 aPosition = GL.GetAttribLocation(prog, "VertexPosition")
-
-# Create textures from lightmap data
-for face = bsp.faces
-	w, h = face.lm_size[1], face.lm_size[2]
-	println(w, "x", h)
-	from = face.lm_id
-	to = from + w * h * 3 - 1
-#	data = bsp.lightmaps[from:to]
-	data = fill(uint8(255), w * h * 4)
-
-	tex = GL.GenTexture()
-	GL.BindTexture(GL.TEXTURE_2D, tex)
-
-	GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, w, h, GL.RGB, data)
-
-	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR)
-	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
-	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
-	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
-
-	face.lm_id = tex
-	GL.BindTexture(GL.TEXTURE_2D, 0)
-end
 
 vao = GL.GenVertexArray()
 GL.BindVertexArray(vao)
@@ -232,6 +210,32 @@ function rotationMatrix{T<:Real}(eyeDir::Vector{T}, upDir::Vector{T})
 	return rotMat
 end
 
+light1position = GL.GetUniformLocation(prog, "Light1Position")
+light1color = GL.GetUniformLocation(prog, "Light1Color")
+light1power = GL.GetUniformLocation(prog, "Light1Power")
+
+GL.UseProgram(prog)
+
+light1_pos = Float32[250, 0, 55]
+light1_pow = 500
+GL.Uniform3f(light1color, Float32[1, 0.8, 0.5])
+
+function mouse_button_cb(button::Cint, action::Cint)
+	if action == 1
+		global light1_pos = cam_pos
+	end
+	return
+end
+GLFW.SetMouseButtonCallback(mouse_button_cb)
+
+function mouse_wheel_cb(pos::Cint)
+	global light1_pow += pos * 10
+	global light1_pow = max(light1_pow, 10)
+	GLFW.SetMouseWheel(0)
+	return
+end
+GLFW.SetMouseWheelCallback(mouse_wheel_cb)
+
 while GLFW.GetWindowParam(GLFW.OPENED)
 	if m_capture()
 		mouseToSphere(GLFW.GetMousePos()...)
@@ -275,24 +279,22 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	GL.Clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT)
 
-	GL.UseProgram(prog)
 	GL.UniformMatrix4fv(uModel, modelMatrix)
 	transMat = translationMatrix(-cam_pos[1], -cam_pos[2], -cam_pos[3])
 	viewMat = rotMat * transMat
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
-	
-	GL.Uniform1i(uLightmap, 0)
+
+	GL.Uniform3f(light1position, light1_pos)
+	GL.Uniform1f(light1power, light1_pow)
+
 	GL.BindVertexArray(vao)
 
 	for face = bsp.faces
-		GL.Uniform4f(uTexU, face.tex_u)
-		GL.Uniform4f(uTexV, face.tex_v)
-		GL.BindTexture(GL.TEXTURE_2D, face.lm_id)
-		GL.Uniform2ui(uLmSize, face.lm_size)
+		#GL.Uniform4f(uTexU, face.tex_u)
+		#GL.Uniform4f(uTexV, face.tex_v)
 		GL.DrawElements(GL.TRIANGLES, face.indices)
 		GL.GetError()
-		GL.BindTexture(GL.TEXTURE_2D, 0)
 	end
 
 	GL.BindVertexArray(0)

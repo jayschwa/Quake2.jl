@@ -51,12 +51,29 @@ type Edge
 	v2::Uint16
 end
 
+immutable Point
+	x::Float32
+	y::Float32
+	z::Float32
+end
+
+immutable RGB
+	r::Float32
+	g::Float32
+	b::Float32
+end
+
+immutable Light
+	origin::Point
+	color::RGB
+	power::Float32
+end
+
 type FaceInfo
 	indices::Array{Uint16,1}
 	tex_u::Array{Float32,1}
 	tex_v::Array{Float32,1}
-	lm_id::Uint32
-	lm_size::Array{Uint32,1}
+	#lights::Array{Light,1}
 end
 
 type Bsp
@@ -102,11 +119,6 @@ function bspRead(io::IO)
 			continue
 		end
 
-		max_u = -Inf32
-		min_u = Inf32
-		max_v = -Inf32
-		min_v = Inf32
-
 		indices = Array(Uint16, 0)
 		first = face.first_edge + 1
 		hub = edges[abs(face2edge[first])+1].v1
@@ -123,28 +135,12 @@ function bspRead(io::IO)
 				push!(indices, v2)
 				push!(indices, v1)
 			end
-
-			for v = [v1, v2]
-				pos = vertices[v*3+1:v*3+3]
-				push!(pos, float32(1))
-				u = dot(pos, tex_u)
-				v = dot(pos, tex_v)
-				max_u = max(u, max_u)
-				min_u = min(u, min_u)
-				max_v = max(v, max_v)
-				min_v = min(v, min_v)
-			end
 		end
 
-		width = ceil(max_u / 16) - floor(min_u / 16) + 1
-		height = ceil(max_v / 16) - floor(min_v / 16) + 1
-		if width > 16 || height > 16
-			println(width, "x", height)
-		end
-		lm_size = Uint32[width, height]
-
-		push!(faceinfos, FaceInfo(indices, tex_u, tex_v, uint32(face.lightmap_offset+1), lm_size))
+		push!(faceinfos, FaceInfo(indices, tex_u, tex_v))
 	end
 
 	return Bsp(vertices, faceinfos, lightmaps)
 end
+
+
