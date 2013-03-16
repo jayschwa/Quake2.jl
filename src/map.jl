@@ -13,15 +13,19 @@ uniform mat4 ProjMatrix;
 uniform vec4 TexU;
 uniform vec4 TexV;
 
-uniform vec3 FaceNormal;
+uniform vec3 Light1Position;
 
 in vec3 VertexPosition;
 
 out vec3 FragPosition;
+out vec3 Light1Direction;
+out float Light1Distance;
 
 void main()
 {
 	FragPosition = VertexPosition;
+	Light1Direction = normalize(Light1Position - VertexPosition);
+	Light1Distance = distance(Light1Position, VertexPosition);
 	const vec4 pos = vec4(VertexPosition, 1.0);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
 }
@@ -30,18 +34,24 @@ void main()
 const fragment_shader_src = "
 #version 420
 
+uniform vec3 FaceNormal;
+
 uniform vec3 Light1Position;
 uniform vec3 Light1Color;
 uniform float Light1Power;
 
 in vec3 FragPosition;
+in vec3 Light1Direction;
+in float Light1Distance;
 
 out vec4 FragColor;
 
 void main()
 {
-	const float power = (Light1Power - distance(Light1Position, FragPosition)) / Light1Power;
-	const vec3 LightColor = Light1Color * pow(clamp(power, 0.0, 1.0), 2);
+	float dirMod = max(dot(FaceNormal, normalize(Light1Position - FragPosition)), 0.0);
+	dirMod = 0.3 + 0.6 * dirMod;
+	float distMod = (Light1Power - distance(Light1Position, FragPosition)) / Light1Power;
+	const vec3 LightColor = Light1Color * dirMod * pow(clamp(distMod, 0.0, 1.0), 2);
 	FragColor = vec4(LightColor, 1.0);
 }
 "
@@ -135,6 +145,8 @@ uModel = GL.GetUniformLocation(prog, "ModelMatrix")
 uView = GL.GetUniformLocation(prog, "ViewMatrix")
 uProj = GL.GetUniformLocation(prog, "ProjMatrix")
 
+uNormal = GL.GetUniformLocation(prog, "FaceNormal")
+
 #uTexU = GL.GetUniformLocation(prog, "TexU")
 #uTexV = GL.GetUniformLocation(prog, "TexV")
 
@@ -220,14 +232,6 @@ light1_pos = Float32[250, 0, 55]
 light1_pow = 500
 GL.Uniform3f(light1color, Float32[1, 0.8, 0.5])
 
-function mouse_button_cb(button::Cint, action::Cint)
-	if action == 1
-		global light1_pos = cam_pos
-	end
-	return
-end
-GLFW.SetMouseButtonCallback(mouse_button_cb)
-
 function mouse_wheel_cb(pos::Cint)
 	global light1_pow += pos * 10
 	global light1_pow = max(light1_pow, 10)
@@ -271,6 +275,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	end
 	if GLFW.GetMouseButton(GLFW.MOUSE_BUTTON_LEFT)
 		m_capture(true)
+		light1_pos = cam_pos
 	end
 	if GLFW.GetKey(GLFW.KEY_ESC)
 		m_capture(false)
@@ -293,6 +298,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	for face = bsp.faces
 		#GL.Uniform4f(uTexU, face.tex_u)
 		#GL.Uniform4f(uTexV, face.tex_v)
+		GL.Uniform3f(uNormal, face.normal)
 		GL.DrawElements(GL.TRIANGLES, face.indices)
 		GL.GetError()
 	end

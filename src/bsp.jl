@@ -23,18 +23,30 @@ const AreaPortals    = 19
 
 const Magic = "IBSP"
 
-type Lump
+immutable Lump
 	offset::Uint32
 	length::Uint32
 end
 
-type Header
+immutable Header
 	signature::Uint32
 	version::Uint32
 	#lumps::Array{Lump,1}(19)
 end
 
-type Face
+immutable Point
+	x::Float32
+	y::Float32
+	z::Float32
+end
+
+immutable Plane
+	normal::Point
+	distance::Float32
+	type_::Uint32
+end
+
+immutable Face
 	plane::Uint16
 	plane_side::Uint16
 	first_edge::Uint32
@@ -46,40 +58,22 @@ end
 
 typealias FaceEdge Int32
 
-type Edge
+immutable Edge
 	v1::Uint16
 	v2::Uint16
-end
-
-immutable Point
-	x::Float32
-	y::Float32
-	z::Float32
-end
-
-immutable RGB
-	r::Float32
-	g::Float32
-	b::Float32
-end
-
-immutable Light
-	origin::Point
-	color::RGB
-	power::Float32
 end
 
 type FaceInfo
 	indices::Array{Uint16,1}
 	tex_u::Array{Float32,1}
 	tex_v::Array{Float32,1}
+	normal::Array{Float32,1}
 	#lights::Array{Light,1}
 end
 
 type Bsp
 	vertices::Array{Float32,1}
 	faces::Array{FaceInfo,1}
-	lightmaps::Array{Uint8,1}
 end
 
 function bspRead(io::IO)
@@ -90,8 +84,9 @@ function bspRead(io::IO)
 	seek(io, lumps[Vertices].offset)
 	vertices = read(io, Float32, count)
 
-	seek(io, lumps[Lightmaps].offset)
-	lightmaps = read(io, Uint8, lumps[Lightmaps].length)
+	count = uint32(lumps[Planes].length / sizeof(Plane))
+	seek(io, lumps[Planes].offset)
+	planes = read(io, Plane, count)
 
 	count = uint32(lumps[Faces].length / sizeof(Face))
 	seek(io, lumps[Faces].offset)
@@ -112,6 +107,13 @@ function bspRead(io::IO)
 		tex_u = read(io, Float32, 4)
 		tex_v = read(io, Float32, 4)
 		tex_flags = read(io, Uint32)
+
+		plane = planes[face.plane+1]
+		normal = Float32[plane.normal.x, plane.normal.y, plane.normal.z]
+		if face.plane_side != 0
+			normal = -normal
+		end
+		normal /= norm(normal)
 
 		# Skip SKY, NODRAW, and TRANS faces
 		if tex_flags & 0x4 != 0 || tex_flags & 0x10 != 0 ||
@@ -137,10 +139,10 @@ function bspRead(io::IO)
 			end
 		end
 
-		push!(faceinfos, FaceInfo(indices, tex_u, tex_v))
+		push!(faceinfos, FaceInfo(indices, tex_u, tex_v, normal))
 	end
 
-	return Bsp(vertices, faceinfos, lightmaps)
+	return Bsp(vertices, faceinfos)
 end
 
 
