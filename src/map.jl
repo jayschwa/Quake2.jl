@@ -229,8 +229,8 @@ light1power = GL.GetUniformLocation(prog, "Light1Power")
 GL.UseProgram(prog)
 
 light1_pos = Float32[250, 0, 55]
-light1_pow = 500
-GL.Uniform3f(light1color, Float32[1, 0.8, 0.5])
+light1_pow = float32(500)
+GL.uniform!(light1color, Float32[1.0, 0.8, 0.5]...)
 
 function mouse_wheel_cb(pos::Cint)
 	global light1_pow += pos * 10
@@ -290,15 +290,15 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 
-	GL.Uniform3f(light1position, light1_pos)
-	GL.Uniform1f(light1power, light1_pow)
+	GL.uniform!(light1position, light1_pos...)
+	GL.uniform!(light1power, light1_pow...)
 
 	GL.BindVertexArray(vao)
 
 	for face = bsp.faces
 		#GL.Uniform4f(uTexU, face.tex_u)
 		#GL.Uniform4f(uTexV, face.tex_v)
-		GL.Uniform3f(uNormal, face.normal)
+		GL.uniform!(uNormal, face.normal...)
 		GL.DrawElements(GL.TRIANGLES, face.indices)
 		GL.GetError()
 	end
