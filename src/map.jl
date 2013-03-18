@@ -48,8 +48,8 @@ out vec4 FragColor;
 
 void main()
 {
-	float dirMod = max(dot(FaceNormal, normalize(Light1Position - FragPosition)), 0.0);
-	dirMod = 0.3 + 0.6 * dirMod;
+	float dirMod = dot(FaceNormal, normalize(Light1Position - FragPosition)); // -1 to 1
+	dirMod = max(0.3 + 0.6 * dirMod, 0);
 	float distMod = (Light1Power - distance(Light1Position, FragPosition)) / Light1Power;
 	const vec3 LightColor = Light1Color * dirMod * pow(clamp(distMod, 0.0, 1.0), 2);
 	FragColor = vec4(LightColor, 1.0);
