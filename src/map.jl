@@ -250,6 +250,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	rightDir /= norm(rightDir)
 	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
 	dist = 1 #FIXME: cam_speed * toq()
+	toq()    #FIXME: remove
 	if m_capture()
 		if GLFW.GetKey(GLFW.KEY_LSHIFT)
 			dist *= 3
