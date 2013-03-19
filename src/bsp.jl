@@ -67,7 +67,7 @@ type FaceInfo
 	indices::Array{Uint16,1}
 	tex_u::Array{Float32,1}
 	tex_v::Array{Float32,1}
-	normal::Array{Float32,1}
+	normal::GL.Vec3
 	#lights::Array{Light,1}
 end
 
@@ -109,7 +109,7 @@ function bspRead(io::IO)
 		tex_flags = read(io, Uint32)
 
 		plane = planes[face.plane+1]
-		normal = Float32[plane.normal.x, plane.normal.y, plane.normal.z]
+		normal = GL.Vec3(plane.normal.x, plane.normal.y, plane.normal.z)
 		if face.plane_side != 0
 			normal = -normal
 		end

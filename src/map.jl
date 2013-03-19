@@ -141,14 +141,14 @@ GL.AttachShader(prog, vertex_shader)
 GL.AttachShader(prog, fragment_shader)
 GL.LinkProgram(prog)
 
-uModel = GL.GetUniformLocation(prog, "ModelMatrix")
-uView = GL.GetUniformLocation(prog, "ViewMatrix")
-uProj = GL.GetUniformLocation(prog, "ProjMatrix")
+uModel = GL.Uniform(prog, "ModelMatrix")
+uView = GL.Uniform(prog, "ViewMatrix")
+uProj = GL.Uniform(prog, "ProjMatrix")
 
-uNormal = GL.GetUniformLocation(prog, "FaceNormal")
+uNormal = GL.Uniform(prog, "FaceNormal")
 
-#uTexU = GL.GetUniformLocation(prog, "TexU")
-#uTexV = GL.GetUniformLocation(prog, "TexV")
+#uTexU = GL.Uniform(prog, "TexU")
+#uTexV = GL.Uniform(prog, "TexV")
 
 aPosition = GL.GetAttribLocation(prog, "VertexPosition")
 
@@ -169,7 +169,7 @@ tic()
 tic()
 
 cam_speed = 200 # unit/sec
-cam_pos = float32([-3, 0, 0])
+cam_pos = GL.Vec3(0, 0, 0)
 
 m_captured = false
 function m_capture(capture::Bool)
@@ -206,10 +206,10 @@ function sphereToCartesian(yaw::Real, pitch::Real)
 	x = cos(yaw)*cos(pitch)
 	y = sin(yaw)*cos(pitch)
 	z = sin(pitch)
-	return Float32[x, y, z]
+	return GL.Vec3(x, y, z)
 end
 
-function rotationMatrix{T<:Real}(eyeDir::Vector{T}, upDir::Vector{T})
+function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVector{T})
 	rightDir = cross(eyeDir, upDir)
 	rightDir /= norm(rightDir)
 	upDir = cross(rightDir, eyeDir)
@@ -222,15 +222,15 @@ function rotationMatrix{T<:Real}(eyeDir::Vector{T}, upDir::Vector{T})
 	return rotMat
 end
 
-light1position = GL.GetUniformLocation(prog, "Light1Position")
-light1color = GL.GetUniformLocation(prog, "Light1Color")
-light1power = GL.GetUniformLocation(prog, "Light1Power")
+light1position = GL.Uniform(prog, "Light1Position")
+light1color = GL.Uniform(prog, "Light1Color")
+light1power = GL.Uniform(prog, "Light1Power")
 
 GL.UseProgram(prog)
 
-light1_pos = Float32[250, 0, 55]
+light1_pos = GL.Vec3(250, 0, 55)
 light1_pow = float32(500)
-GL.uniform!(light1color, Float32[1.0, 0.8, 0.5]...)
+write(light1color, GL.Vec3(1.0, 0.8, 0.5))
 
 function mouse_wheel_cb(pos::Cint)
 	global light1_pow += pos * 10
@@ -246,7 +246,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 		GLFW.SetMousePos(0, 0)
 	end
 	eyeDir = sphereToCartesian(cam_yaw, cam_pitch)
-	rightDir = cross(eyeDir, Float32[0, 0, 1])
+	rightDir = cross(eyeDir, GL.Vec3(0, 0, 1))
 	rightDir /= norm(rightDir)
 	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
 	dist = cam_speed * toq()
@@ -267,10 +267,23 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 			cam_pos += dist * rightDir
 		end
 		if GLFW.GetKey(' ')
-			cam_pos[3] += dist
+			println(typeof(dist))
+			println(dist)
+			
+			println(typeof(GL.Vec3(0.0f, 0.0f, dist)))
+			GL.GLSLType3{Float32}(0.0f, 0.0f, float32(dist))
+
+			println("aoeuaoeu")
+			velocity = GL.Vec3(0, 0, dist)
+			println(typeof(velocity))
+			println(GL.Vec3(0, 0, dist))
+
+			println(cam_pos + GL.Vec3(0, 0, dist))
+			cam_pos += GL.Vec3(0, 0, dist)
+			println("yay")
 		end
 		if GLFW.GetKey(GLFW.KEY_LCTRL)
-			cam_pos[3] -= dist
+			cam_pos -= GL.Vec3(0, 0, dist)
 		end
 	end
 	if GLFW.GetMouseButton(GLFW.MOUSE_BUTTON_LEFT)
@@ -290,15 +303,15 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 
-	GL.uniform!(light1position, light1_pos...)
-	GL.uniform!(light1power, light1_pow...)
+	write(light1position, light1_pos)
+	write(light1power, light1_pow)
 
 	GL.BindVertexArray(vao)
 
 	for face = bsp.faces
 		#GL.Uniform4f(uTexU, face.tex_u)
 		#GL.Uniform4f(uTexV, face.tex_v)
-		GL.uniform!(uNormal, face.normal...)
+		write(uNormal, face.normal)
 		GL.DrawElements(GL.TRIANGLES, face.indices)
 		GL.GetError()
 	end
