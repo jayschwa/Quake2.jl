@@ -249,7 +249,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	rightDir = cross(eyeDir, GL.Vec3(0, 0, 1))
 	rightDir /= norm(rightDir)
 	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
-	dist = float64(10)
+	dist = 1 #FIXME: cam_speed * toq()
 	if m_capture()
 		if GLFW.GetKey(GLFW.KEY_LSHIFT)
 			dist *= 3
@@ -267,20 +267,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 			cam_pos += dist * rightDir
 		end
 		if GLFW.GetKey(' ')
-			println(typeof(dist))
-			println(dist)
-			
-			println(typeof(GL.Vec3(0.0f, 0.0f, dist)))
-			GL.Vec3(0.0f, 0.0f, 10)
-
-			println("aoeuaoeu")
-			velocity = GL.Vec3(0, 0, dist)
-			println(typeof(velocity))
-			println(GL.Vec3(0, 0, dist))
-
-			println(cam_pos + GL.Vec3(0, 0, dist))
 			cam_pos += GL.Vec3(0, 0, dist)
-			println("yay")
 		end
 		if GLFW.GetKey(GLFW.KEY_LCTRL)
 			cam_pos -= GL.Vec3(0, 0, dist)
