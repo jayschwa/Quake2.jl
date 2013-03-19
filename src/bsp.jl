@@ -34,14 +34,14 @@ immutable Header
 	#lumps::Array{Lump,1}(19)
 end
 
-immutable Point
-	x::Float32
-	y::Float32
-	z::Float32
+immutable Light
+	origin::GL.Vec3
+	color::GL.Vec3
+	power::Float32
 end
 
 immutable Plane
-	normal::Point
+	normal::GL.Vec3
 	distance::Float32
 	type_::Uint32
 end
@@ -68,11 +68,12 @@ type FaceInfo
 	tex_u::Array{Float32,1}
 	tex_v::Array{Float32,1}
 	normal::GL.Vec3
-	#lights::Array{Light,1}
+	lights::Array{Light,1}
 end
 
 type Bsp
-	vertices::Array{Float32,1}
+	entities::Array{Dict{String,String},1}
+	vertices::Array{GL.Vec3,1}
 	faces::Array{FaceInfo,1}
 end
 
@@ -80,9 +81,59 @@ function bspRead(io::IO)
 	hdr = read(io, Header)
 	lumps = read(io, Lump, 19)
 
-	count = uint32(lumps[Vertices].length / sizeof(Float32))
+	# Read entity lump
+	seek(io, lumps[Entities].offset)
+	entityLump = bytestring(read(io, Uint8, lumps[Entities].length-1))
+	entities = Array(Dict{String, String}, 0)
+
+	# Create a dictionary for each entity
+	for entity = split(entityLump, ['{', '}'])
+		entity = strip(entity)
+		if length(entity) < 1 # TODO: remove this w/ regex
+			continue
+		end
+		dict = Dict{String, String}()
+		for field = split(entity, '\n')
+			fieldStr = split(strip(field), "\" \"")
+			name = lstrip(strip(fieldStr[1], "\""), "_")
+			value = strip(fieldStr[2], "\"")
+			dict[name] = value
+		end
+		if length(dict) < 1
+			continue
+		elseif !has(dict, "classname")
+			warn("entity has no classname")
+			continue
+		else
+			push!(entities, dict)
+		end
+	end
+
+	# Build list of lights
+	bsp_lights = Array(Light, 0)
+	for ent = entities
+		if ent["classname"] != "light"
+			continue
+		end
+		if has(ent, "origin")
+			origin = split(ent["origin"])
+			origin = GL.Vec3(float32(origin[1]), float32(origin[2]), float32(origin[3]))
+		else
+			warn("light has no origin")
+			continue
+		end
+		if has(ent, "light")
+			power = float32(ent["light"])
+		else
+			power = float32(200)
+		end
+		color = GL.Vec3(1, 1, 1)
+		push!(bsp_lights, Light(origin, color, power))
+	end
+
+	count = uint32(lumps[Vertices].length / sizeof(GL.Vec3))
 	seek(io, lumps[Vertices].offset)
-	vertices = read(io, Float32, count)
+	vertices = read(io, GL.Vec3, count)
 
 	count = uint32(lumps[Planes].length / sizeof(Plane))
 	seek(io, lumps[Planes].offset)
@@ -100,6 +151,8 @@ function bspRead(io::IO)
 	seek(io, lumps[Edges].offset)
 	edges = read(io, Edge, count)
 
+	light_stats = Array(Int, 0)
+
 	faceinfos = Array(FaceInfo, 0)
 	for face = faces
 
@@ -108,8 +161,7 @@ function bspRead(io::IO)
 		tex_v = read(io, Float32, 4)
 		tex_flags = read(io, Uint32)
 
-		plane = planes[face.plane+1]
-		normal = GL.Vec3(plane.normal.x, plane.normal.y, plane.normal.z)
+		normal = planes[face.plane+1].normal
 		if face.plane_side != 0
 			normal = -normal
 		end
@@ -139,10 +191,33 @@ function bspRead(io::IO)
 			end
 		end
 
-		push!(faceinfos, FaceInfo(indices, tex_u, tex_v, normal))
+		# Determine which lights affect this face
+		face_lights = Array(Light, 0)
+		for light = bsp_lights
+			in_range = false
+			for idx = indices
+				vertex = vertices[idx+1]
+				if norm(vertex - light.origin) < light.power
+					in_range = true
+					break
+				end
+			end
+			if in_range
+				push!(face_lights, light)
+			end
+		end
+		push!(light_stats, length(face_lights))
+
+		push!(faceinfos, FaceInfo(indices, tex_u, tex_v, normal, face_lights))
 	end
 
-	return Bsp(vertices, faceinfos)
+	println("lights:")
+	println("min:    ", min(light_stats))
+	println("mean:   ", mean(light_stats))
+	println("median: ", median(light_stats))
+	println("max:    ", max(light_stats))
+
+	return Bsp(entities, vertices, faceinfos)
 end
 
 

@@ -235,6 +235,7 @@ write(light1color, GL.Vec3(1.0, 0.8, 0.5))
 function mouse_wheel_cb(pos::Cint)
 	global light1_pow += pos * 10
 	global light1_pow = max(light1_pow, 10)
+	println("light power: ", light1_pow)
 	GLFW.SetMouseWheel(0)
 	return
 end
