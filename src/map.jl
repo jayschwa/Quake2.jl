@@ -3,6 +3,10 @@ import GLFW
 
 include("bsp.jl")
 
+bspFile = open(ARGS[1])
+bsp = bspRead(bspFile)
+close(bspFile)
+
 const vertex_shader_src = "
 #version 420
 
@@ -25,7 +29,7 @@ void main()
 }
 "
 
-maxLights = 1
+maxLights = bsp.max_lights
 const fragment_shader_src = string("
 #version 420
 
@@ -101,10 +105,6 @@ function updateProjMatrix(width::Cint, height::Cint)
 
 	return
 end
-
-bspFile = open(ARGS[1])
-bsp = bspRead(bspFile)
-close(bspFile)
 
 GLFW.Init()
 GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MAJOR, 4)
@@ -248,15 +248,6 @@ function mouse_wheel_cb(pos::Cint)
 end
 GLFW.SetMouseWheelCallback(mouse_wheel_cb)
 
-function writeLight(u::GL.Uniform, val::Light)
-	write(u, val.origin)
-	GL.GetError()
-	write(u+1, val.color)
-	GL.GetError()
-	write(u+2, val.power)
-	GL.GetError()
-end
-
 while GLFW.GetWindowParam(GLFW.OPENED)
 	if m_capture()
 		mouseToSphere(GLFW.GetMousePos()...)
@@ -307,17 +298,19 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 
-	write(lightUniforms[1], light1_pos)
-	write(lightUniforms[2], GL.Vec3(1.0, 0.8, 0.5))
-	write(lightUniforms[3], light1_pow)
-	write(numLightsUniform, int32(1))
-
 	GL.BindVertexArray(vao)
 
 	for face = bsp.faces
 		#GL.Uniform4f(uTexU, face.tex_u)
 		#GL.Uniform4f(uTexV, face.tex_v)
 		write(uNormal, face.normal)
+		write(numLightsUniform, int32(length(face.lights)))
+		i = 1
+		for light = face.lights
+			write(lightUniforms[i], light.origin); i += 1
+			write(lightUniforms[i], light.color); i += 1
+			write(lightUniforms[i], light.power); i += 1
+		end
 		GL.DrawElements(GL.TRIANGLES, face.indices)
 		GL.GetError()
 	end

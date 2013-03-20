@@ -75,6 +75,7 @@ type Bsp
 	entities::Array{Dict{String,String},1}
 	vertices::Array{GL.Vec3,1}
 	faces::Array{FaceInfo,1}
+	max_lights::Integer
 end
 
 function bspRead(io::IO)
@@ -122,12 +123,18 @@ function bspRead(io::IO)
 			warn("light has no origin")
 			continue
 		end
+		if has(ent, "color")
+			color = split(ent["color"])
+			color = GL.Vec3(float32(color[1]), float32(color[2]), float32(color[3]))
+			color /= max(color)
+		else
+			color = GL.Vec3(1.0, 1.0, 1.0)
+		end
 		if has(ent, "light")
 			power = float32(ent["light"])
 		else
 			power = float32(200)
 		end
-		color = GL.Vec3(1, 1, 1)
 		push!(bsp_lights, Light(origin, color, power))
 	end
 
@@ -193,19 +200,19 @@ function bspRead(io::IO)
 
 		# Determine which lights affect this face
 		face_lights = Array(Light, 0)
-#		for light = bsp_lights
-#			in_range = false
-#			for idx = indices
-#				vertex = vertices[idx+1]
-#				if norm(vertex - light.origin) < light.power
-#					in_range = true
-#					break
-#				end
-#			end
-#			if in_range
-#				push!(face_lights, light)
-#			end
-#		end
+		for light = bsp_lights
+			in_range = false
+			for idx = indices
+				vertex = vertices[idx+1]
+				if norm(vertex - light.origin) < light.power
+					in_range = true
+					break
+				end
+			end
+			if in_range
+				push!(face_lights, light)
+			end
+		end
 		push!(light_stats, length(face_lights))
 
 		push!(faceinfos, FaceInfo(indices, tex_u, tex_v, normal, face_lights))
@@ -217,7 +224,7 @@ function bspRead(io::IO)
 	println("median: ", median(light_stats))
 	println("max:    ", max(light_stats))
 
-	return Bsp(entities, vertices, faceinfos)
+	return Bsp(entities, vertices, faceinfos, max(light_stats))
 end
 
 
