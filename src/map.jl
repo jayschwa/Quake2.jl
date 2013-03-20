@@ -69,7 +69,7 @@ void main()
 			LightColor += Light[i].Color * dirMod * distMod;
 		}
 		if (SpecularLighting) {
-			LightColor += Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 20) * distMod * min(pow(2 * lightDist / Light[i].Power, 2), 1);
+			LightColor += Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 10) * distMod * min(pow(1.5 * lightDist / Light[i].Power, 3), 1);
 		}
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));

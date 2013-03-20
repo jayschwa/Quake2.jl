@@ -136,7 +136,7 @@ function bspRead(io::IO)
 		else
 			power = float32(300)
 		end
-		power *= 1.5
+		power *= 1.33
 		push!(bsp_lights, Light(origin, color, power))
 	end
 
