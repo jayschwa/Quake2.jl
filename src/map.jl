@@ -25,11 +25,11 @@ void main()
 }
 "
 
-numLights = 1
+maxLights = 1
 const fragment_shader_src = string("
 #version 420
 
-struct Light
+struct light_t
 {
 	vec3 Position;
 	vec3 Color;
@@ -38,7 +38,8 @@ struct Light
 
 uniform vec3 FaceNormal;
 
-uniform Light Lights[", numLights, "];
+uniform int NumLights;
+uniform light_t Light[", maxLights, "];
 
 in vec3 FragPosition;
 
@@ -47,11 +48,11 @@ out vec4 FragColor;
 void main()
 {
 	vec3 LightColor = vec3(0.0, 0.0, 0.0);
-	for (int i = 0; i < ", numLights, "; i++) {
-		float dirMod = dot(FaceNormal, normalize(Lights[i].Position - FragPosition)); // -1 to 1
+	for (int i = 0; i < NumLights; i++) {
+		float dirMod = dot(FaceNormal, normalize(Light[i].Position - FragPosition)); // -1 to 1
 		dirMod = max(0.3 + 0.6 * dirMod, 0);
-		float distMod = (Lights[i].Power - distance(Lights[i].Position, FragPosition)) / Lights[i].Power;
-		LightColor += Lights[i].Color * dirMod * pow(clamp(distMod, 0.0, 1.0), 2);
+		float distMod = (Light[i].Power - distance(Light[i].Position, FragPosition)) / Light[i].Power;
+		LightColor += Light[i].Color * dirMod * pow(clamp(distMod, 0.0, 1.0), 2);
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
 	FragColor = vec4(LightColor, 1.0);
@@ -224,9 +225,10 @@ function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVecto
 	return rotMat
 end
 
+numLightsUniform = GL.Uniform(prog, "NumLights")
 lightUniforms = Array(GL.Uniform, 0)
-for i = 0:numLights-1
-	light = string("Lights[", i, "].")
+for i = 0:maxLights-1
+	light = string("Light[", i, "].")
 	push!(lightUniforms, GL.Uniform(prog, string(light, "Position")))
 	push!(lightUniforms, GL.Uniform(prog, string(light, "Color")))
 	push!(lightUniforms, GL.Uniform(prog, string(light, "Power")))
@@ -309,6 +311,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	write(lightUniforms[1], light1_pos)
 	write(lightUniforms[2], GL.Vec3(1.0, 0.8, 0.5))
 	write(lightUniforms[3], light1_pow)
+	write(numLightsUniform, int32(1))
 
 	GL.BindVertexArray(vao)
 
