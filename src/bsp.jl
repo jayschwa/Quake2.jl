@@ -38,6 +38,7 @@ immutable Light
 	origin::GL.Vec3
 	color::GL.Vec3
 	power::Float32
+	Light(origin, color, power) = new(convert(GL.Vec3, origin), convert(GL.Vec3, color), convert(Float32, power))
 end
 
 immutable Plane
@@ -133,8 +134,9 @@ function bspRead(io::IO)
 		if has(ent, "light")
 			power = float32(ent["light"])
 		else
-			power = float32(200)
+			power = float32(300)
 		end
+		power *= 1.5
 		push!(bsp_lights, Light(origin, color, power))
 	end
 
