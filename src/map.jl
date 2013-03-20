@@ -44,8 +44,11 @@ uniform vec3 CameraPosition;
 
 uniform vec3 FaceNormal;
 
+uniform bool DiffuseLighting;
+uniform bool SpecularLighting;
 uniform int NumLights;
 uniform light_t Light[", maxLights, "];
+uniform float Dev;
 
 in vec3 FragPosition;
 
@@ -58,11 +61,16 @@ void main()
 	for (int i = 0; i < NumLights; i++) {
 		vec3 lightDir = normalize(Light[i].Position - FragPosition);
 		float dirMod = dot(FaceNormal, lightDir); // -1 to 1
-		dirMod = max(0.3 + 0.6 * dirMod, 0);
-		float distMod = (Light[i].Power - distance(Light[i].Position, FragPosition)) / Light[i].Power;
+		dirMod = max(0.2 + 0.8 * dirMod, 0);
+		float lightDist = max(distance(Light[i].Position, FragPosition), Dev);
+		float distMod = (Light[i].Power - lightDist) / Light[i].Power;
 		distMod = pow(clamp(distMod, 0.0, 1.0), 2);
-		LightColor += Light[i].Color * dirMod * distMod;
-		LightColor += Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 20) * distMod;
+		if (DiffuseLighting) {
+			LightColor += Light[i].Color * dirMod * distMod;
+		}
+		if (SpecularLighting) {
+			LightColor += Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 20) * distMod * min(pow(2 * lightDist / Light[i].Power, 2), 1);
+		}
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
 	FragColor = vec4(LightColor, 1.0);
@@ -158,6 +166,8 @@ uCamPos = GL.Uniform(prog, "CameraPosition")
 
 uNormal = GL.Uniform(prog, "FaceNormal")
 
+uDev = GL.Uniform(prog, "Dev")
+
 #uTexU = GL.Uniform(prog, "TexU")
 #uTexV = GL.Uniform(prog, "TexV")
 
@@ -179,7 +189,7 @@ frames = 0
 tic()
 tic()
 
-cam_speed = 200 # unit/sec
+cam_speed = 100 # unit/sec
 cam_pos = GL.Vec3(0, 0, 0)
 
 m_captured = false
@@ -233,6 +243,8 @@ function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVecto
 	return rotMat
 end
 
+uDiffuse = GL.Uniform(prog, "DiffuseLighting")
+uSpecular = GL.Uniform(prog, "SpecularLighting")
 numLightsUniform = GL.Uniform(prog, "NumLights")
 lightUniforms = Array(GL.Uniform, 0)
 for i = 0:maxLights-1
@@ -245,16 +257,32 @@ end
 GL.UseProgram(prog)
 
 light1_pos = GL.Vec3(250, 0, 55)
-light1_pow = float32(500)
+light1_pow = float32(20)
+
+function key_cb(key::Cint, action::Cint)
+	if action == 1
+		if key == '2'
+			global diffuse_lighting_on = !diffuse_lighting_on
+		end
+		if key == '3'
+			global specular_lighting_on = !specular_lighting_on
+		end
+	end
+	return
+end
+GLFW.SetKeyCallback(key_cb)
 
 function mouse_wheel_cb(pos::Cint)
-	global light1_pow += pos * 10
-	global light1_pow = max(light1_pow, 10)
+	global light1_pow += pos
+	global light1_pow = max(light1_pow, 1)
 	println("light power: ", light1_pow)
 	GLFW.SetMouseWheel(0)
 	return
 end
 GLFW.SetMouseWheelCallback(mouse_wheel_cb)
+
+diffuse_lighting_on = true
+specular_lighting_on = true
 
 while GLFW.GetWindowParam(GLFW.OPENED)
 	if m_capture()
@@ -268,7 +296,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	dist = cam_speed * toq()
 	if m_capture()
 		if GLFW.GetKey(GLFW.KEY_LSHIFT)
-			dist *= 3
+			dist *= 5
 		end
 		if GLFW.GetKey(',')
 			cam_pos += dist * eyeDir
@@ -307,6 +335,10 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 
 	write(uCamPos, cam_pos)
+	write(uDev, light1_pow)
+
+	write(uDiffuse, diffuse_lighting_on)
+	write(uSpecular, specular_lighting_on)
 
 	write(lightUniforms[1], light1_pos)
 	write(lightUniforms[2], GL.Vec3(1.0, 1.0, 1.0))

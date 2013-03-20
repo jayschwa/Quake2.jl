@@ -28,6 +28,8 @@ for (T,t) in ((Float32, "f"), (Int32, "i"), (Uint32, "ui"))
 	end
 end
 
+write(u::Uniform, val::Bool) = write(u, convert(Uint32, val))
+
 function UniformMatrix4fv(u::Uniform, data::Array{Float32,2})
 	ccall( (:glUniformMatrix4fv, lib), Void,
 		(GLint, GLsizei, GLboolean, Ptr{GLfloat}),
