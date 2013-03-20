@@ -29,7 +29,7 @@ void main()
 }
 "
 
-maxLights = bsp.max_lights
+maxLights = bsp.max_lights + 1
 const fragment_shader_src = string("
 #version 420
 
@@ -298,14 +298,18 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 
+	write(lightUniforms[1], light1_pos)
+	write(lightUniforms[2], GL.Vec3(1.0, 1.0, 1.0))
+	write(lightUniforms[3], light1_pow)
+
 	GL.BindVertexArray(vao)
 
 	for face = bsp.faces
 		#GL.Uniform4f(uTexU, face.tex_u)
 		#GL.Uniform4f(uTexV, face.tex_v)
 		write(uNormal, face.normal)
-		write(numLightsUniform, int32(length(face.lights)))
-		i = 1
+		write(numLightsUniform, int32(length(face.lights)+1))
+		i = 4
 		for light = face.lights
 			write(lightUniforms[i], light.origin); i += 1
 			write(lightUniforms[i], light.color); i += 1
