@@ -13,48 +13,50 @@ uniform mat4 ProjMatrix;
 uniform vec4 TexU;
 uniform vec4 TexV;
 
-uniform vec3 Light1Position;
-
 in vec3 VertexPosition;
 
 out vec3 FragPosition;
-out vec3 Light1Direction;
-out float Light1Distance;
 
 void main()
 {
 	FragPosition = VertexPosition;
-	Light1Direction = normalize(Light1Position - VertexPosition);
-	Light1Distance = distance(Light1Position, VertexPosition);
 	const vec4 pos = vec4(VertexPosition, 1.0);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
 }
 "
 
-const fragment_shader_src = "
+numLights = 1
+const fragment_shader_src = string("
 #version 420
+
+struct Light
+{
+	vec3 Position;
+	vec3 Color;
+	float Power;
+};
 
 uniform vec3 FaceNormal;
 
-uniform vec3 Light1Position;
-uniform vec3 Light1Color;
-uniform float Light1Power;
+uniform Light Lights[", numLights, "];
 
 in vec3 FragPosition;
-in vec3 Light1Direction;
-in float Light1Distance;
 
 out vec4 FragColor;
 
 void main()
 {
-	float dirMod = dot(FaceNormal, normalize(Light1Position - FragPosition)); // -1 to 1
-	dirMod = max(0.3 + 0.6 * dirMod, 0);
-	float distMod = (Light1Power - distance(Light1Position, FragPosition)) / Light1Power;
-	const vec3 LightColor = Light1Color * dirMod * pow(clamp(distMod, 0.0, 1.0), 2);
+	vec3 LightColor = vec3(0.0, 0.0, 0.0);
+	for (int i = 0; i < ", numLights, "; i++) {
+		float dirMod = dot(FaceNormal, normalize(Lights[i].Position - FragPosition)); // -1 to 1
+		dirMod = max(0.3 + 0.6 * dirMod, 0);
+		float distMod = (Lights[i].Power - distance(Lights[i].Position, FragPosition)) / Lights[i].Power;
+		LightColor += Lights[i].Color * dirMod * pow(clamp(distMod, 0.0, 1.0), 2);
+	}
+	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
 	FragColor = vec4(LightColor, 1.0);
 }
-"
+")
 
 const near = 4
 const far = 16384
@@ -222,15 +224,18 @@ function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVecto
 	return rotMat
 end
 
-light1position = GL.Uniform(prog, "Light1Position")
-light1color = GL.Uniform(prog, "Light1Color")
-light1power = GL.Uniform(prog, "Light1Power")
+lightUniforms = Array(GL.Uniform, 0)
+for i = 0:numLights-1
+	light = string("Lights[", i, "].")
+	push!(lightUniforms, GL.Uniform(prog, string(light, "Position")))
+	push!(lightUniforms, GL.Uniform(prog, string(light, "Color")))
+	push!(lightUniforms, GL.Uniform(prog, string(light, "Power")))
+end
 
 GL.UseProgram(prog)
 
 light1_pos = GL.Vec3(250, 0, 55)
 light1_pow = float32(500)
-write(light1color, GL.Vec3(1.0, 0.8, 0.5))
 
 function mouse_wheel_cb(pos::Cint)
 	global light1_pow += pos * 10
@@ -240,6 +245,15 @@ function mouse_wheel_cb(pos::Cint)
 	return
 end
 GLFW.SetMouseWheelCallback(mouse_wheel_cb)
+
+function writeLight(u::GL.Uniform, val::Light)
+	write(u, val.origin)
+	GL.GetError()
+	write(u+1, val.color)
+	GL.GetError()
+	write(u+2, val.power)
+	GL.GetError()
+end
 
 while GLFW.GetWindowParam(GLFW.OPENED)
 	if m_capture()
@@ -292,8 +306,9 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
 
-	write(light1position, light1_pos)
-	write(light1power, light1_pow)
+	write(lightUniforms[1], light1_pos)
+	write(lightUniforms[2], GL.Vec3(1.0, 0.8, 0.5))
+	write(lightUniforms[3], light1_pow)
 
 	GL.BindVertexArray(vao)
 

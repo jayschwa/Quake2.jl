@@ -193,19 +193,19 @@ function bspRead(io::IO)
 
 		# Determine which lights affect this face
 		face_lights = Array(Light, 0)
-		for light = bsp_lights
-			in_range = false
-			for idx = indices
-				vertex = vertices[idx+1]
-				if norm(vertex - light.origin) < light.power
-					in_range = true
-					break
-				end
-			end
-			if in_range
-				push!(face_lights, light)
-			end
-		end
+#		for light = bsp_lights
+#			in_range = false
+#			for idx = indices
+#				vertex = vertices[idx+1]
+#				if norm(vertex - light.origin) < light.power
+#					in_range = true
+#					break
+#				end
+#			end
+#			if in_range
+#				push!(face_lights, light)
+#			end
+#		end
 		push!(light_stats, length(face_lights))
 
 		push!(faceinfos, FaceInfo(indices, tex_u, tex_v, normal, face_lights))

@@ -27,7 +27,9 @@ typealias Attribute GLint
 
 immutable Uniform
 	location::GLint
+	Uniform(location) = new(convert(GLint, location))
 end
++(u::Uniform, i::Integer) = Uniform(u.location+i)
 
 import Base:cross,getindex,reshape,size
 
