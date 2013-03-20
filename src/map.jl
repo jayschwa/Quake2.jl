@@ -40,6 +40,8 @@ struct light_t
 	float Power;
 };
 
+uniform vec3 CameraPosition;
+
 uniform vec3 FaceNormal;
 
 uniform int NumLights;
@@ -52,11 +54,15 @@ out vec4 FragColor;
 void main()
 {
 	vec3 LightColor = vec3(0.0, 0.0, 0.0);
+	vec3 camReflectDir = normalize(reflect(normalize(FragPosition - CameraPosition), FaceNormal));
 	for (int i = 0; i < NumLights; i++) {
-		float dirMod = dot(FaceNormal, normalize(Light[i].Position - FragPosition)); // -1 to 1
+		vec3 lightDir = normalize(Light[i].Position - FragPosition);
+		float dirMod = dot(FaceNormal, lightDir); // -1 to 1
 		dirMod = max(0.3 + 0.6 * dirMod, 0);
 		float distMod = (Light[i].Power - distance(Light[i].Position, FragPosition)) / Light[i].Power;
-		LightColor += Light[i].Color * dirMod * pow(clamp(distMod, 0.0, 1.0), 2);
+		distMod = pow(clamp(distMod, 0.0, 1.0), 2);
+		LightColor += Light[i].Color * dirMod * distMod;
+		LightColor += Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 20) * distMod;
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
 	FragColor = vec4(LightColor, 1.0);
@@ -147,6 +153,8 @@ GL.LinkProgram(prog)
 uModel = GL.Uniform(prog, "ModelMatrix")
 uView = GL.Uniform(prog, "ViewMatrix")
 uProj = GL.Uniform(prog, "ProjMatrix")
+
+uCamPos = GL.Uniform(prog, "CameraPosition")
 
 uNormal = GL.Uniform(prog, "FaceNormal")
 
@@ -297,6 +305,8 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	viewMat = rotMat * transMat
 	GL.UniformMatrix4fv(uView, viewMat)
 	GL.UniformMatrix4fv(uProj, projMatrix)
+
+	write(uCamPos, cam_pos)
 
 	write(lightUniforms[1], light1_pos)
 	write(lightUniforms[2], GL.Vec3(1.0, 1.0, 1.0))
