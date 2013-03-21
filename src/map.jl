@@ -46,6 +46,8 @@ uniform vec3 FaceNormal;
 
 uniform bool DiffuseLighting;
 uniform bool SpecularLighting;
+
+uniform vec3 AmbientLight;
 uniform int NumLights;
 uniform light_t Light[", maxLights, "];
 uniform float Dev;
@@ -56,7 +58,7 @@ out vec4 FragColor;
 
 void main()
 {
-	vec3 LightColor = vec3(0.0, 0.0, 0.0);
+	vec3 LightColor = AmbientLight;
 	vec3 camReflectDir = normalize(reflect(normalize(FragPosition - CameraPosition), FaceNormal));
 	for (int i = 0; i < NumLights; i++) {
 		vec3 lightDir = normalize(Light[i].Position - FragPosition);
@@ -243,6 +245,7 @@ function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVecto
 	return rotMat
 end
 
+uAmbient = GL.Uniform(prog, "AmbientLight")
 uDiffuse = GL.Uniform(prog, "DiffuseLighting")
 uSpecular = GL.Uniform(prog, "SpecularLighting")
 numLightsUniform = GL.Uniform(prog, "NumLights")
@@ -261,6 +264,12 @@ light1_pow = float32(20)
 
 function key_cb(key::Cint, action::Cint)
 	if action == 1
+		if key == '0'
+			global wireframe_only = !wireframe_only
+		end
+		if key == '1'
+			global ambient_lighting_on = !ambient_lighting_on
+		end
 		if key == '2'
 			global diffuse_lighting_on = !diffuse_lighting_on
 		end
@@ -281,8 +290,10 @@ function mouse_wheel_cb(pos::Cint)
 end
 GLFW.SetMouseWheelCallback(mouse_wheel_cb)
 
+ambient_lighting_on = false
 diffuse_lighting_on = true
 specular_lighting_on = true
+wireframe_only = false
 
 while GLFW.GetWindowParam(GLFW.OPENED)
 	if m_capture()
@@ -337,6 +348,13 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	write(uCamPos, cam_pos)
 	write(uDev, light1_pow)
 
+	if wireframe_only
+		write(uAmbient, GL.Vec3(0.1, 0.1, 0.1))
+	elseif ambient_lighting_on
+		write(uAmbient, bsp.ambient_light)
+	else
+		write(uAmbient, GL.Vec3(0, 0, 0))
+	end
 	write(uDiffuse, diffuse_lighting_on)
 	write(uSpecular, specular_lighting_on)
 
@@ -357,7 +375,11 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 			write(lightUniforms[i], light.color); i += 1
 			write(lightUniforms[i], light.power); i += 1
 		end
-		GL.DrawElements(GL.TRIANGLES, face.indices)
+		if wireframe_only
+			GL.DrawElements(GL.LINES, face.indices)
+		else
+			GL.DrawElements(GL.TRIANGLES, face.indices)
+		end
 		GL.GetError()
 	end
 

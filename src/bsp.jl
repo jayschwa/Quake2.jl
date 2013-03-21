@@ -77,11 +77,34 @@ type Bsp
 	vertices::Array{GL.Vec3,1}
 	faces::Array{FaceInfo,1}
 	max_lights::Integer
+	ambient_light::GL.Vec3
+end
+
+immutable Rgb8
+	r::Uint8
+	g::Uint8
+	b::Uint8
 end
 
 function bspRead(io::IO)
 	hdr = read(io, Header)
 	lumps = read(io, Lump, 19)
+
+	count = uint32(lumps[Lightmaps].length / sizeof(Rgb8))
+	seek(io, lumps[Lightmaps].offset)
+	lightmapBytes = read(io, Rgb8, count)
+	lightmap = Array(GL.Vec3, 0)
+	for p = lightmapBytes
+		push!(lightmap, GL.Vec3(p.r / 255, p.g / 255, p.b / 255))
+	end
+
+	println("lightmap:")
+	#println("min:      ", min(lightmap))
+	println(lightmap)
+	println("mean:     ", mean(lightmap))
+	#println("median:   ", median(lightmap))
+	#println("max:      ", max(lightmap))
+	#println("std:      ", std(lightmap))
 
 	# Read entity lump
 	seek(io, lumps[Entities].offset)
@@ -226,7 +249,7 @@ function bspRead(io::IO)
 	println("median: ", median(light_stats))
 	println("max:    ", max(light_stats))
 
-	return Bsp(entities, vertices, faceinfos, max(light_stats))
+	return Bsp(entities, vertices, faceinfos, max(light_stats), mean(lightmap)/2)
 end
 
 
