@@ -339,11 +339,11 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	GL.Clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT)
 
-	GL.UniformMatrix4fv(uModel, modelMatrix)
+	write(uModel, modelMatrix)
 	transMat = translationMatrix(-cam_pos[1], -cam_pos[2], -cam_pos[3])
 	viewMat = rotMat * transMat
-	GL.UniformMatrix4fv(uView, viewMat)
-	GL.UniformMatrix4fv(uProj, projMatrix)
+	write(uView, viewMat)
+	write(uProj, projMatrix)
 
 	write(uCamPos, cam_pos)
 	write(uDev, light1_pow)
