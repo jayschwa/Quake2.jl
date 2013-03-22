@@ -16,15 +16,15 @@ for (T,t) in ((Float32, "f"), (Int32, "i"), (Uint32, "ui"))
 		write(u::Uniform, val::$T) =
 			ccall(($(string("glUniform1", t)), lib), Void,
 				(GLint, $T), u.location, val)
-		write(u::Uniform, val::GL.GLSLType2{$T}) =
+		write(u::Uniform, val::GL.GLSLVector2{$T}) =
 			ccall(($(string("glUniform2", t, "v")), lib), Void,
-				(GLint, GLsizei, Ptr{GL.GLSLType2{$T}}), u.location, 1, &val)
-		write(u::Uniform, val::GL.GLSLType3{$T}) =
+				(GLint, GLsizei, Ptr{GL.GLSLVector2{$T}}), u.location, 1, &val)
+		write(u::Uniform, val::GL.GLSLVector3{$T}) =
 			ccall(($(string("glUniform3", t, "v")), lib), Void,
-				(GLint, GLsizei, Ptr{GL.GLSLType3{$T}}), u.location, 1, &val)
-		write(u::Uniform, val::GL.GLSLType4{$T}) =
+				(GLint, GLsizei, Ptr{GL.GLSLVector3{$T}}), u.location, 1, &val)
+		write(u::Uniform, val::GL.GLSLVector4{$T}) =
 			ccall(($(string("glUniform4", t, "v")), lib), Void,
-				(GLint, GLsizei, Ptr{GL.GLSLType4{$T}}), u.location, 1, &val)
+				(GLint, GLsizei, Ptr{GL.GLSLVector4{$T}}), u.location, 1, &val)
 	end
 end
 
