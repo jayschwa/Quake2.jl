@@ -4,7 +4,7 @@ import GLFW
 include("bsp.jl")
 
 bspFile = open(ARGS[1])
-bsp = bspRead(bspFile)
+bsp = read(bspFile, Bsp)
 close(bspFile)
 
 const vertex_shader_src = "

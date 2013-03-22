@@ -1,4 +1,4 @@
-importall Base
+import Base.read
 read(s::IO, t::DataType) = t(ntuple(length(t.types), x->read(s, t.types[x]))...)
 
 const Entities       = 1
@@ -86,7 +86,7 @@ immutable Rgb8
 	b::Uint8
 end
 
-function bspRead(io::IO)
+function read(io::IO, ::Type{Bsp})
 	hdr = read(io, Header)
 	lumps = read(io, Lump, 19)
 
