@@ -1,5 +1,6 @@
 import GL
 import GLFW
+import Input
 
 include("bsp.jl")
 
@@ -195,17 +196,15 @@ cam_speed = 100 # unit/sec
 cam_pos = GL.Vec3(0, 0, 0)
 
 m_captured = false
-function m_capture(capture::Bool)
-	if capture
-		GLFW.Disable(GLFW.MOUSE_CURSOR)
-		GLFW.SetMousePos(0, 0)
-		global m_captured = true
-	else
-		GLFW.Enable(GLFW.MOUSE_CURSOR)
-		global m_captured = false
-	end
+function m_capture()
+	GLFW.Disable(GLFW.MOUSE_CURSOR)
+	GLFW.SetMousePos(0, 0)
+	global m_captured = true
 end
-m_capture() = m_captured
+function m_release()
+	GLFW.Enable(GLFW.MOUSE_CURSOR)
+	global m_captured = false
+end
 
 # cursor xy to degree ratio
 const m_pitch = 0.05
@@ -279,24 +278,21 @@ function key_cb(key::Cint, action::Cint)
 	end
 	return
 end
-GLFW.SetKeyCallback(key_cb)
-
-function mouse_wheel_cb(pos::Cint)
-	global light1_pow += pos
-	global light1_pow = max(light1_pow, 1)
-	println("light power: ", light1_pow)
-	GLFW.SetMouseWheel(0)
-	return
-end
-GLFW.SetMouseWheelCallback(mouse_wheel_cb)
 
 ambient_lighting_on = false
 diffuse_lighting_on = true
 specular_lighting_on = true
 wireframe_only = false
 
+Input.bind(GLFW.MOUSE_BUTTON_LEFT, m_capture)
+Input.bind(GLFW.KEY_ESC, m_release)
+
+GLFW.SetKeyCallback(Input.event)
+GLFW.SetMouseButtonCallback(Input.event)
+GLFW.SetMouseWheelCallback(Input.wheel_event)
+
 while GLFW.GetWindowParam(GLFW.OPENED)
-	if m_capture()
+	if m_captured
 		mouseToSphere(GLFW.GetMousePos()...)
 		GLFW.SetMousePos(0, 0)
 	end
@@ -305,7 +301,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	rightDir /= norm(rightDir)
 	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
 	dist = cam_speed * toq()
-	if m_capture()
+	if m_captured
 		if GLFW.GetKey(GLFW.KEY_LSHIFT)
 			dist *= 5
 		end
@@ -327,13 +323,6 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 		if GLFW.GetKey(GLFW.KEY_LCTRL)
 			cam_pos -= GL.Vec3(0, 0, dist)
 		end
-	end
-	if GLFW.GetMouseButton(GLFW.MOUSE_BUTTON_LEFT)
-		m_capture(true)
-		light1_pos = cam_pos
-	end
-	if GLFW.GetKey(GLFW.KEY_ESC)
-		m_capture(false)
 	end
 	tic()
 
