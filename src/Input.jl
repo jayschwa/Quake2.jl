@@ -1,9 +1,21 @@
 module Input
 
+export in_grab, in_release
 export bind, bindlist, unbind
 
 import GLFW
 import Player
+
+in_grabbed = false
+function in_grab()
+	GLFW.Disable(GLFW.MOUSE_CURSOR)
+	GLFW.SetMousePos(0, 0)
+	global in_grabbed = true
+end
+function in_release()
+	global in_grabbed = false
+	GLFW.Enable(GLFW.MOUSE_CURSOR)
+end
 
 const MOUSE_WHEEL_DOWN = (GLFW.KEY_LAST+1)
 const MOUSE_WHEEL_UP   = (GLFW.KEY_LAST+2)
@@ -15,7 +27,7 @@ unbind(key::Integer) = delete!(bindlist, int(key))
 
 function event(key::Int, press::Bool)
 	action = bind(key)
-	if action != None
+	if action != None && (in_grabbed || action == in_grab)
 		if applicable(action, press)
 			action(press)
 		elseif press
@@ -45,8 +57,10 @@ m_pitch = 0.05
 m_yaw = 0.05
 
 function look_event(x::Cint, y::Cint)
-	Player.lookdir!(Player.self, m_yaw * -x, m_pitch * -y)
-	GLFW.SetMousePos(0, 0)
+	if in_grabbed
+		Player.lookdir!(Player.self, m_yaw * -x, m_pitch * -y)
+		GLFW.SetMousePos(0, 0)
+	end
 	return
 end
 

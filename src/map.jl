@@ -192,17 +192,6 @@ GL.BindVertexArray(0)
 frames = 0
 tic()
 
-m_captured = false
-function m_capture()
-	GLFW.Disable(GLFW.MOUSE_CURSOR)
-	GLFW.SetMousePos(0, 0)
-	global m_captured = true
-end
-function m_release()
-	GLFW.Enable(GLFW.MOUSE_CURSOR)
-	global m_captured = false
-end
-
 function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVector{T})
 	rightDir = cross(eyeDir, upDir)
 	rightDir /= norm(rightDir)
@@ -256,8 +245,8 @@ diffuse_lighting_on = true
 specular_lighting_on = true
 wireframe_only = false
 
-bind(GLFW.MOUSE_BUTTON_LEFT, m_capture)
-bind(GLFW.KEY_ESC, m_release)
+bind(GLFW.MOUSE_BUTTON_LEFT, in_grab)
+bind(GLFW.KEY_ESC, in_release)
 bind(',', forward)
 bind('A', moveleft)
 bind('O', back)
