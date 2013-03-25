@@ -1,6 +1,7 @@
 import GL
 import GLFW
-import Input
+importall Input
+importall Player
 
 include("bsp.jl")
 
@@ -85,15 +86,15 @@ const far = 16384
 projMatrix = float32(eye(4))
 fov = 90.0
 
-function translationMatrix(x::Number, y::Number, z::Number)
+function translationMatrix(pos::GL.Vec3)
 	T = float32(eye(4))
-	T[13] = float32(x)
-	T[14] = float32(y)
-	T[15] = float32(z)
+	T[13] = pos[1]
+	T[14] = pos[2]
+	T[15] = pos[3]
 	return T
 end
 
-modelMatrix = translationMatrix(0, 0, 0)
+modelMatrix = translationMatrix(GL.Vec3(0, 0, 0))
 
 function updateProjMatrix(width::Cint, height::Cint)
 	GL.Viewport(width, height)
@@ -190,10 +191,6 @@ GL.BindVertexArray(0)
 
 frames = 0
 tic()
-tic()
-
-cam_speed = 100 # unit/sec
-cam_pos = GL.Vec3(0, 0, 0)
 
 m_captured = false
 function m_capture()
@@ -204,31 +201,6 @@ end
 function m_release()
 	GLFW.Enable(GLFW.MOUSE_CURSOR)
 	global m_captured = false
-end
-
-# cursor xy to degree ratio
-const m_pitch = 0.05
-const m_yaw = 0.05
-
-cam_yaw = 0
-cam_pitch = 0
-
-function mouseToSphere(xdelta::Real, ydelta::Real)
-	global cam_yaw -= m_yaw * xdelta
-	global cam_pitch -= m_pitch * ydelta
-	global cam_pitch = clamp(cam_pitch, -89, 89)
-	return (cam_yaw, cam_pitch)
-end
-
-function sphereToCartesian(yaw::Real, pitch::Real)
-	# convert to radians
-	yaw *= (pi / 180)
-	pitch *= (pi / 180)
-
-	x = cos(yaw)*cos(pitch)
-	y = sin(yaw)*cos(pitch)
-	z = sin(pitch)
-	return GL.Vec3(x, y, z)
 end
 
 function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVector{T})
@@ -284,57 +256,42 @@ diffuse_lighting_on = true
 specular_lighting_on = true
 wireframe_only = false
 
-Input.bind(GLFW.MOUSE_BUTTON_LEFT, m_capture)
-Input.bind(GLFW.KEY_ESC, m_release)
+bind(GLFW.MOUSE_BUTTON_LEFT, m_capture)
+bind(GLFW.KEY_ESC, m_release)
+bind(',', forward)
+bind('A', moveleft)
+bind('O', back)
+bind('E', moveright)
+bind(' ', moveup)
+bind(GLFW.KEY_LCTRL, movedown)
 
 GLFW.SetKeyCallback(Input.event)
 GLFW.SetMouseButtonCallback(Input.event)
+GLFW.SetMousePosCallback(Input.look_event)
 GLFW.SetMouseWheelCallback(Input.wheel_event)
 
 while GLFW.GetWindowParam(GLFW.OPENED)
-	if m_captured
-		mouseToSphere(GLFW.GetMousePos()...)
-		GLFW.SetMousePos(0, 0)
-	end
-	eyeDir = sphereToCartesian(cam_yaw, cam_pitch)
+	x = cos(Player.self.yaw)*cos(Player.self.pitch)
+	y = sin(Player.self.yaw)*cos(Player.self.pitch)
+	z = sin(Player.self.pitch)
+	eyeDir = GL.Vec3(x, y, z)
+	eyeDir /= norm(eyeDir)
+
 	rightDir = cross(eyeDir, GL.Vec3(0, 0, 1))
 	rightDir /= norm(rightDir)
 	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
-	dist = cam_speed * toq()
-	if m_captured
-		if GLFW.GetKey(GLFW.KEY_LSHIFT)
-			dist *= 5
-		end
-		if GLFW.GetKey(',')
-			cam_pos += dist * eyeDir
-		end
-		if GLFW.GetKey('A')
-			cam_pos -= dist * rightDir
-		end
-		if GLFW.GetKey('O')
-			cam_pos -= dist * eyeDir
-		end
-		if GLFW.GetKey('E')
-			cam_pos += dist * rightDir
-		end
-		if GLFW.GetKey(' ')
-			cam_pos += GL.Vec3(0, 0, dist)
-		end
-		if GLFW.GetKey(GLFW.KEY_LCTRL)
-			cam_pos -= GL.Vec3(0, 0, dist)
-		end
-	end
-	tic()
+
+	Player.move!(Player.self)
 
 	GL.Clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT)
 
 	write(uModel, modelMatrix)
-	transMat = translationMatrix(-cam_pos[1], -cam_pos[2], -cam_pos[3])
+	transMat = translationMatrix(-Player.self.position)
 	viewMat = rotMat * transMat
 	write(uView, viewMat)
 	write(uProj, projMatrix)
 
-	write(uCamPos, cam_pos)
+	write(uCamPos, Player.self.position)
 	write(uDev, light1_pow)
 
 	if wireframe_only
@@ -378,7 +335,6 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	frames += 1
 end
 
-toq()
 seconds = toc()
 println(frames / seconds, " FPS")
 
