@@ -31,7 +31,7 @@ immutable Uniform
 end
 +(u::Uniform, i::Integer) = Uniform(u.location+i)
 
-import Base:cross,getindex,reshape,size
+import Base:cross,degrees2radians,getindex,reshape,size
 
 immutable GLSLVector2{T} <: AbstractVector{T}
 	v1::T
@@ -83,6 +83,7 @@ end
 .*(y::Number, x::GLSLVector3) = .*(x, y)
 ./{T}(x::GLSLVector3{T}, y::Number) = GLSLVector3{T}(x.v1/y, x.v2/y, x.v3/y)
 cross(a::GLSLVector3, b::GLSLVector3) = GLSLVector3(a[2]*b[3]-a[3]*b[2], a[3]*b[1]-a[1]*b[3], a[1]*b[2]-a[2]*b[1])
+degrees2radians{T}(v::GLSLVector3{T}) = GLSLVector3{T}(degrees2radians(v[1]), degrees2radians(v[2]), degrees2radians(v[3]))
 reshape{T}(x::GLSLVector3{T}, ::Dims) = T[x.v1, x.v2, x.v3]'
 size(::GLSLVector3) = (3,)
 

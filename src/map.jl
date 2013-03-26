@@ -247,12 +247,17 @@ wireframe_only = false
 
 bind(GLFW.MOUSE_BUTTON_LEFT, in_grab)
 bind(GLFW.KEY_ESC, in_release)
+# WASD in Dvorak
 bind(',', forward)
 bind('A', moveleft)
 bind('O', back)
 bind('E', moveright)
 bind(' ', moveup)
 bind(GLFW.KEY_LCTRL, movedown)
+bind(GLFW.KEY_UP, lookup)
+bind(GLFW.KEY_DOWN, lookdown)
+bind(GLFW.KEY_LEFT, left)
+bind(GLFW.KEY_RIGHT, right)
 
 GLFW.SetKeyCallback(Input.event)
 GLFW.SetMouseButtonCallback(Input.event)
@@ -260,17 +265,10 @@ GLFW.SetMousePosCallback(Input.look_event)
 GLFW.SetMouseWheelCallback(Input.wheel_event)
 
 while GLFW.GetWindowParam(GLFW.OPENED)
-	x = cos(Player.self.yaw)*cos(Player.self.pitch)
-	y = sin(Player.self.yaw)*cos(Player.self.pitch)
-	z = sin(Player.self.pitch)
-	eyeDir = GL.Vec3(x, y, z)
-	eyeDir /= norm(eyeDir)
-
-	rightDir = cross(eyeDir, GL.Vec3(0, 0, 1))
-	rightDir /= norm(rightDir)
-	rotMat = rotationMatrix(eyeDir, float32([0, 0, 1]))
 
 	Player.move!(Player.self)
+	eyedir, updir, rightdir = sphere2cartesian(Player.self.orientation)
+	rotMat = rotationMatrix(eyedir, updir)
 
 	GL.Clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT)
 
