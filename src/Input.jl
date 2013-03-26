@@ -57,7 +57,7 @@ m_pitch = 0.05
 m_yaw = 0.05
 
 function look_event(x::Cint, y::Cint)
-	if in_grabbed
+	if in_grabbed && (x != 0 || y != 0)
 		Player.lookdir!(Player.self, m_pitch * -y, m_yaw * -x)
 		GLFW.SetMousePos(0, 0)
 	end
