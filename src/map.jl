@@ -84,7 +84,7 @@ void main()
 const near = 4
 const far = 16384
 projMatrix = float32(eye(4))
-fov = 90.0
+fov = 60.0
 
 function translationMatrix(pos::GL.Vec3)
 	T = float32(eye(4))
