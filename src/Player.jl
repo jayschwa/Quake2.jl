@@ -63,7 +63,7 @@ end
 
 self = State()
 
-export forward, back, moveleft, moveright, moveup, movedown, left, right, lookup, lookdown
+export forward, back, moveleft, moveright, moveup, movedown, speed, left, right, lookup, lookdown
 
 forward(apply::Bool)   = movedir!(self, GL.Vec3( 1,  0,  0), apply)
 back(apply::Bool)      = movedir!(self, GL.Vec3(-1,  0,  0), apply)
@@ -71,6 +71,14 @@ moveleft(apply::Bool)  = movedir!(self, GL.Vec3( 0, -1,  0), apply)
 moveright(apply::Bool) = movedir!(self, GL.Vec3( 0,  1,  0), apply)
 moveup(apply::Bool)    = movedir!(self, GL.Vec3( 0,  0,  1), apply)
 movedown(apply::Bool)  = movedir!(self, GL.Vec3( 0,  0, -1), apply)
+
+function speed(apply::Bool)
+	if apply
+		self.speed *= 5
+	else
+		self.speed /= 5
+	end
+end
 
 left(apply::Bool)     = lookdir!(self, GL.Vec3(  0,  60,  0), apply)
 right(apply::Bool)    = lookdir!(self, GL.Vec3(  0, -60,  0), apply)

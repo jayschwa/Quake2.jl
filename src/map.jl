@@ -247,6 +247,7 @@ wireframe_only = false
 
 bind(GLFW.MOUSE_BUTTON_LEFT, in_grab)
 bind(GLFW.KEY_ESC, in_release)
+
 # WASD in Dvorak
 bind(',', forward)
 bind('A', moveleft)
@@ -254,6 +255,8 @@ bind('O', back)
 bind('E', moveright)
 bind(' ', moveup)
 bind(GLFW.KEY_LCTRL, movedown)
+bind(GLFW.KEY_LSHIFT, speed)
+
 bind(GLFW.KEY_UP, lookup)
 bind(GLFW.KEY_DOWN, lookdown)
 bind(GLFW.KEY_LEFT, left)
