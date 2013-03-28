@@ -59,6 +59,24 @@ end
 
 typealias FaceEdge Int32
 
+immutable Leaf
+	brush_or::Uint32
+
+	cluster::Uint16
+	area::Uint16
+
+	bbox_min::GL.GLSLVector3{Int16}
+	bbox_max::GL.GLSLVector3{Int16}
+
+	first_face::Uint16
+	num_faces::Uint16
+
+	first_brush::Uint16
+	num_brushes::Uint16
+end
+
+typealias LeafFace Uint16
+
 immutable Edge
 	v1::Uint16
 	v2::Uint16
@@ -73,9 +91,9 @@ type FaceInfo
 end
 
 type Bsp
-	entities::Array{Dict{String,String},1}
-	vertices::Array{GL.Vec3,1}
-	faces::Array{FaceInfo,1}
+	entities::Vector{Dict{String,String}}
+	vertices::Vector{GL.Vec3}
+	leaf_faces::Vector{Vector{FaceInfo}}
 	max_lights::Integer
 	ambient_light::GL.Vec3
 end
@@ -171,6 +189,15 @@ function read(io::IO, ::Type{Bsp})
 	seek(io, lumps[Planes].offset)
 	planes = read(io, Plane, count)
 
+	count = uint32(lumps[Leaves].length / sizeof(Leaf))
+	seek(io, lumps[Leaves].offset)
+	leaves = read(io, Leaf, count)
+	println("leaves: ", int(count))
+
+	count = uint32(lumps[LeafFaceTable].length / sizeof(LeafFace))
+	seek(io, lumps[LeafFaceTable].offset)
+	leaf2face = read(io, LeafFace, count)
+
 	count = uint32(lumps[Faces].length / sizeof(Face))
 	seek(io, lumps[Faces].offset)
 	faces = read(io, Face, count)
@@ -200,10 +227,10 @@ function read(io::IO, ::Type{Bsp})
 		normal /= norm(normal)
 
 		# Skip SKY, NODRAW, and TRANS faces
-		if tex_flags & 0x4 != 0 || tex_flags & 0x10 != 0 ||
-		   tex_flags & 0x20 != 0 || tex_flags & 0x80 != 0
-			continue
-		end
+		#if tex_flags & 0x4 != 0 || tex_flags & 0x10 != 0 ||
+		#   tex_flags & 0x20 != 0 || tex_flags & 0x80 != 0
+		#	continue
+		#end
 
 		indices = Array(Uint16, 0)
 		first = face.first_edge + 1
@@ -243,13 +270,34 @@ function read(io::IO, ::Type{Bsp})
 		push!(faceinfos, FaceInfo(indices, tex_u, tex_v, normal, face_lights))
 	end
 
+	# associate faces with leaves
+	leaves_faces = Array(Vector{FaceInfo}, 0)
+	leaf_stats = Array(Int, 0)
+	for leaf = leaves
+		first = leaf.first_face + 1
+		last = first + leaf.num_faces - 1
+		indices = leaf2face[first:last]
+		leaf_faces = Array(FaceInfo, 0)
+		for i = indices
+			push!(leaf_faces, faceinfos[i+1])
+		end
+		push!(leaf_stats, length(leaf_faces))
+		push!(leaves_faces, leaf_faces)
+	end
+
+	println("leaf faces:")
+	println("min:    ", min(leaf_stats))
+	println("mean:   ", mean(leaf_stats))
+	println("median: ", median(leaf_stats))
+	println("max:    ", max(leaf_stats))
+
 	println("lights:")
 	println("min:    ", min(light_stats))
 	println("mean:   ", mean(light_stats))
 	println("median: ", median(light_stats))
 	println("max:    ", max(light_stats))
 
-	return Bsp(entities, vertices, faceinfos, max(light_stats), mean(lightmap)/2)
+	return Bsp(entities, vertices, leaves_faces, max(light_stats), mean(lightmap)/2)
 end
 
 
