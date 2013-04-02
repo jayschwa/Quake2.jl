@@ -10,6 +10,7 @@ function Uniform(prog::Program, name::String)
 end
 
 import Base.write
+importall ImmutableArrays
 
 for (T,t) in ((Float32, "f"), (Int32, "i"), (Uint32, "ui"))
 	@eval begin
@@ -17,15 +18,15 @@ for (T,t) in ((Float32, "f"), (Int32, "i"), (Uint32, "ui"))
 		write(u::Uniform, val::$T) =
 			ccall(($(string("glUniform1", t)), lib), Void,
 				(GLint, $T), u.location, val)
-		write(u::Uniform, val::GL.GLSLVector2{$T}) =
+		write(u::Uniform, val::Vector2{$T}) =
 			ccall(($(string("glUniform2", t, "v")), lib), Void,
-				(GLint, GLsizei, Ptr{GL.GLSLVector2{$T}}), u.location, 1, &val)
-		write(u::Uniform, val::GL.GLSLVector3{$T}) =
+				(GLint, GLsizei, Ptr{Vector2{$T}}), u.location, 1, &val)
+		write(u::Uniform, val::Vector3{$T}) =
 			ccall(($(string("glUniform3", t, "v")), lib), Void,
-				(GLint, GLsizei, Ptr{GL.GLSLVector3{$T}}), u.location, 1, &val)
-		write(u::Uniform, val::GL.GLSLVector4{$T}) =
+				(GLint, GLsizei, Ptr{Vector3{$T}}), u.location, 1, &val)
+		write(u::Uniform, val::Vector4{$T}) =
 			ccall(($(string("glUniform4", t, "v")), lib), Void,
-				(GLint, GLsizei, Ptr{GL.GLSLVector4{$T}}), u.location, 1, &val)
+				(GLint, GLsizei, Ptr{Vector4{$T}}), u.location, 1, &val)
 
 		# Write matrix
 		function write(u::Uniform, mat::Matrix{$T})

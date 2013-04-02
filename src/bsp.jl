@@ -1,6 +1,8 @@
 import Base.read
 read(s::IO, t::DataType) = t(ntuple(length(t.types), x->read(s, t.types[x]))...)
 
+importall ImmutableArrays
+
 const Entities       = 1
 const Planes         = 2
 const Vertices       = 3
@@ -65,8 +67,8 @@ immutable Leaf
 	cluster::Uint16
 	area::Uint16
 
-	bbox_min::GL.GLSLVector3{Int16}
-	bbox_max::GL.GLSLVector3{Int16}
+	bbox_min::Vector3{Int16}
+	bbox_max::Vector3{Int16}
 
 	first_face::Uint16
 	num_faces::Uint16
