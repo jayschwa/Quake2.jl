@@ -1,5 +1,6 @@
 import GL
 import GLFW
+importall ImmutableArrays
 importall Input
 importall Player
 
@@ -83,15 +84,18 @@ void main()
 
 const near = 4
 const far = 16384
-projMatrix = float32(eye(4))
+projMatrix = eye(Matrix4x4{Float32})
 fov = 60.0
 
 function translationMatrix(pos::GL.Vec3)
-	T = float32(eye(4))
-	T[13] = pos[1]
-	T[14] = pos[2]
-	T[15] = pos[3]
-	return T
+	x = pos.e1
+	y = pos.e2
+	z = pos.e3
+	Matrix4x4{Float32}(
+	Vector4{Float32}(1, 0, 0, 0),
+	Vector4{Float32}(0, 1, 0, 0),
+	Vector4{Float32}(0, 0, 1, 0),
+	Vector4{Float32}(x, y, z, 1))
 end
 
 modelMatrix = translationMatrix(GL.Vec3(0, 0, 0))
@@ -112,14 +116,11 @@ function updateProjMatrix(width::Cint, height::Cint)
 	c = -(far+near) / (far-near)
 	d = -(2*far*near) / (far-near)
 
-	projMatrix[1,1] = x
-	projMatrix[1,3] = a
-	projMatrix[2,2] = y
-	projMatrix[2,3] = b
-	projMatrix[3,3] = c
-	projMatrix[3,4] = d
-	projMatrix[4,3] = -1
-	projMatrix[4,4] = 0
+	global projMatrix = Matrix4x4{Float32}(
+	Vector4{Float32}(x, 0, 0, 0),
+	Vector4{Float32}(0, y, 0, 0),
+	Vector4{Float32}(a, 0, c,-1),
+	Vector4{Float32}(0, 0, d, 0))
 
 	return
 end
@@ -197,12 +198,23 @@ function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVecto
 	rightDir /= norm(rightDir)
 	upDir = cross(rightDir, eyeDir)
 
-	rotMat = eye(T, 4)
-	rotMat[1,1:3] = rightDir
-	rotMat[2,1:3] = upDir
-	rotMat[3,1:3] = -eyeDir
+	Xx = rightDir.e1
+	Xy = rightDir.e2
+	Xz = rightDir.e3
 
-	return rotMat
+	Yx = upDir.e1
+	Yy = upDir.e2
+	Yz = upDir.e3
+
+	Zx = -eyeDir.e1
+	Zy = -eyeDir.e2
+	Zz = -eyeDir.e3
+
+	Matrix4x4{Float32}(
+	Vector4{Float32}(Xx, Yx, Zx,  0),
+	Vector4{Float32}(Xy, Yy, Zy,  0),
+	Vector4{Float32}(Xz, Yz, Zz,  0),
+	Vector4{Float32}( 0,  0,  0,  1))
 end
 
 uAmbient = GL.Uniform(prog, "AmbientLight")
