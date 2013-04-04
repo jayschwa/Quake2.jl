@@ -194,25 +194,55 @@ function read(io::IO, ::Type{Bsp})
 
 	###   Populate Tree.Leaves visibility info   ###############################
 
-	faces_from_cluster = Dict{Uint16,Vector{Mesh.Face}}()
+	faces_in_cluster = Dict{Uint16,Vector{Mesh.Face}}()
 	for tup = leaves_in_cluster
 		c = tup[1]
 		cluster_leaves = tup[2]
 		visible_faces = Array(Mesh.Face,0)
 		for leaf = cluster_leaves
 			for face = leaf.faces
-				if !contains(visible_faces, face)
-					push!(visible_faces, face)
-				end
+				push!(visible_faces, face)
 			end
 		end
-		faces_from_cluster[c] = visible_faces
+		faces_in_cluster[c] = unique(visible_faces)
+	end
+
+	faces_from_cluster = Dict{Uint16,Vector{Mesh.Face}}()
+	for tup = faces_in_cluster
+		c = tup[1]                   # this cluster index
+		visible_faces = copy(tup[2])
+
+		if c == uint16(-1)
+			continue
+		end
+
+		v = vis_offsets[c+1].sight+1 # pvs buffer index
+		k = 0                        # other cluster index
+		while k < num_clusters
+			if bin_vis[v] == 0
+				v += 1
+				k += 8 * bin_vis[v]
+			else
+				for bit = 0:7
+					if bin_vis[v] & (1 << bit) != 0 && has(faces_in_cluster, k)
+						for face = faces_in_cluster[k]
+							push!(visible_faces, face)
+						end
+					end
+					k += 1
+				end
+			end
+			v += 1
+		end
+		faces_from_cluster[c] = unique(visible_faces)
 	end
 
 	for i = 1:length(leaves)
 		leaf = leaves[i]
 		c = bin_leaves[i].cluster
-		leaf.faces = faces_from_cluster[c]
+		if c != uint16(-1)
+			leaf.faces = faces_from_cluster[c]
+		end
 	end
 
 	###   Build BSP tree   #####################################################
