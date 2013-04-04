@@ -46,6 +46,8 @@ immutable Plane
 	type_::Uint32
 end
 
+typealias Vertex Vector3{Float32}
+
 immutable Face
 	plane::Uint16
 	plane_side::Uint16
@@ -126,7 +128,7 @@ function read(io::IO, ::Type{Bsp})
 	bin_leaves   = readlump(io, lumps[Leaves],     Leaf)
 	bin_nodes    = readlump(io, lumps[Nodes],      Node)
 	bin_planes   = readlump(io, lumps[Planes],     Plane)
-	bin_vertices = readlump(io, lumps[Vertices],   Vector3{Float32})
+	bin_vertices = readlump(io, lumps[Vertices],   Vertex)
 	bin_vis      = readlump(io, lumps[Visibility], Uint8)
 
 	face2edge = readlump(io, lumps[FaceEdgeTable], FaceEdge)
@@ -313,14 +315,7 @@ function read(io::IO, ::Type{Bsp})
 
 	for light = lights
 		for face = search(tree, light.origin).faces
-			lit = false
-			for i = face.indices
-				vertex = bin_vertices[i+1]
-				if norm(vertex - light.origin) < light.power
-					lit = true
-					break
-				end
-			end
+			lit = Mesh.islit(face, bin_vertices, light)
 			if lit && !contains(face.lights, light)
 				push!(face.lights, light)
 			end
@@ -331,9 +326,11 @@ function read(io::IO, ::Type{Bsp})
 
 	leaf_stats = Array(Int,0)
 	for leaf = leaves
-		push!(leaf_stats, length(leaf.faces))
+		if length(leaf.faces) > 0
+			push!(leaf_stats, length(leaf.faces))
+		end
 	end
-	println("visible faces per leaf:")
+	println("visible faces per non-empty leaf:")
 	println("min:    ", min(leaf_stats))
 	println("mean:   ", mean(leaf_stats))
 	println("median: ", median(leaf_stats))
