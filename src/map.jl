@@ -31,7 +31,7 @@ void main()
 }
 "
 
-maxLights = 30 #bsp.max_lights + 1
+maxLights = bsp.max_lights + 1
 const fragment_shader_src = string("
 #version 420
 

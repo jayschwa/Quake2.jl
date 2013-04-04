@@ -242,7 +242,6 @@ function read(io::IO, ::Type{Bsp})
 
 	###   Associate lights with visible faces   ################################
 
-	light_stats = Array(Int,0)
 	for light = lights
 		for leaf = search(tree, light.origin).visible
 			for face = leaf.faces
@@ -261,7 +260,12 @@ function read(io::IO, ::Type{Bsp})
 		end
 	end
 
-	return Bsp(tree, entities, bin_vertices)
+	light_stats = Array(Int,0)
+	for face = faces
+		push!(light_stats, length(face.lights))
+	end
+
+	return Bsp(tree, entities, bin_vertices, max(light_stats))
 end
 
 end
