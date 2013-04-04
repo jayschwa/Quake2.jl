@@ -87,6 +87,11 @@ immutable Edge
 	v2::Uint16
 end
 
+immutable VisOffsets
+	sight::Uint32
+	sound::Uint32
+end
+
 function build(idx::Integer, nodes::Vector{Node}, planes::Vector{Plane}, leaves::Vector{Tree.Leaf})
 	node = nodes[idx]
 	if node.front < 0
@@ -116,15 +121,20 @@ function read(io::IO, ::Type{Bsp})
 	hdr   = read(io, Header)
 	lumps = read(io, Lump, 19)
 
-	bin_edges    = readlump(io, lumps[Edges],    Edge)
-	bin_faces    = readlump(io, lumps[Faces],    Face)
-	bin_leaves   = readlump(io, lumps[Leaves],   Leaf)
-	bin_nodes    = readlump(io, lumps[Nodes],    Node)
-	bin_planes   = readlump(io, lumps[Planes],   Plane)
-	bin_vertices = readlump(io, lumps[Vertices], Vector3{Float32})
+	bin_edges    = readlump(io, lumps[Edges],      Edge)
+	bin_faces    = readlump(io, lumps[Faces],      Face)
+	bin_leaves   = readlump(io, lumps[Leaves],     Leaf)
+	bin_nodes    = readlump(io, lumps[Nodes],      Node)
+	bin_planes   = readlump(io, lumps[Planes],     Plane)
+	bin_vertices = readlump(io, lumps[Vertices],   Vector3{Float32})
+	bin_vis      = readlump(io, lumps[Visibility], Uint8)
 
 	face2edge = readlump(io, lumps[FaceEdgeTable], FaceEdge)
 	leaf2face = readlump(io, lumps[LeafFaceTable], LeafFace)
+
+	seek(io, lumps[Visibility].offset)
+	num_clusters = read(io, Uint32)
+	vis_offsets = read(io, VisOffsets, num_clusters)
 
 	###   Convert File.Faces to Mesh.Faces   ###################################
 
@@ -158,6 +168,8 @@ function read(io::IO, ::Type{Bsp})
 
 	###   Convert File.Leaves to Tree.Leaves   #################################
 
+	leaves_in_cluster = Dict{Uint16,Vector{Tree.Leaf}}()
+
 	leaves = Array(Tree.Leaf,0)
 	for leaf = bin_leaves
 		leaf_faces = Array(Mesh.Face,0)
@@ -171,14 +183,36 @@ function read(io::IO, ::Type{Bsp})
 				push!(leaf_faces, face)
 			end
 		end
-		push!(leaves, Tree.Leaf(Array(Tree.Leaf,0), leaf_faces))
+		c = leaf.cluster
+		if !has(leaves_in_cluster, c)
+			leaves_in_cluster[c] = Array(Tree.Leaf,0)
+		end
+		leaf = Tree.Leaf(leaf_faces)
+		push!(leaves, leaf)
+		push!(leaves_in_cluster[c], leaf)
 	end
 
 	###   Populate Tree.Leaves visibility info   ###############################
 
-	for leaf = leaves
-		leaf.visible = leaves
-		#push!(leaf.visible, leaf)
+	faces_from_cluster = Dict{Uint16,Vector{Mesh.Face}}()
+	for tup = leaves_in_cluster
+		c = tup[1]
+		cluster_leaves = tup[2]
+		visible_faces = Array(Mesh.Face,0)
+		for leaf = cluster_leaves
+			for face = leaf.faces
+				if !contains(visible_faces, face)
+					push!(visible_faces, face)
+				end
+			end
+		end
+		faces_from_cluster[c] = visible_faces
+	end
+
+	for i = 1:length(leaves)
+		leaf = leaves[i]
+		c = bin_leaves[i].cluster
+		leaf.faces = faces_from_cluster[c]
 	end
 
 	###   Build BSP tree   #####################################################
@@ -248,19 +282,17 @@ function read(io::IO, ::Type{Bsp})
 	###   Associate lights with visible faces   ################################
 
 	for light = lights
-		for leaf = search(tree, light.origin).visible
-			for face = leaf.faces
-				lit = false
-				for i = face.indices
-					vertex = bin_vertices[i+1]
-					if norm(vertex - light.origin) < light.power
-						lit = true
-						break
-					end
+		for face = search(tree, light.origin).faces
+			lit = false
+			for i = face.indices
+				vertex = bin_vertices[i+1]
+				if norm(vertex - light.origin) < light.power
+					lit = true
+					break
 				end
-				if lit && !contains(face.lights, light)
-					push!(face.lights, light)
-				end
+			end
+			if lit && !contains(face.lights, light)
+				push!(face.lights, light)
 			end
 		end
 	end
@@ -271,13 +303,11 @@ function read(io::IO, ::Type{Bsp})
 	for leaf = leaves
 		push!(leaf_stats, length(leaf.faces))
 	end
-	println("faces per leaf:")
+	println("visible faces per leaf:")
 	println("min:    ", min(leaf_stats))
 	println("mean:   ", mean(leaf_stats))
 	println("median: ", median(leaf_stats))
 	println("max:    ", max(leaf_stats))
-	println(length(faces))
-	println(sum(leaf_stats))
 
 	###   Calculate light statistics   #########################################
 

@@ -5,7 +5,6 @@ import Mesh.Face
 import Base:cmp,search
 
 type Leaf
-	visible::Vector{Leaf}
 	faces::Vector{Face}
 end
 

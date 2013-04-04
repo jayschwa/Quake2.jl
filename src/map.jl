@@ -311,25 +311,23 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	GL.BindVertexArray(vao)
 
-	for leaf = search(bsp, Player.self.position).visible
-		for face = leaf.faces
-			#GL.Uniform4f(uTexU, face.tex_u)
-			#GL.Uniform4f(uTexV, face.tex_v)
-			write(uNormal, face.normal)
-			write(numLightsUniform, int32(length(face.lights)+1))
-			i = 4
-			for light = face.lights
-				write(lightUniforms[i], light.origin); i += 1
-				write(lightUniforms[i], light.color); i += 1
-				write(lightUniforms[i], light.power); i += 1
-			end
-			if wireframe_only
-				GL.DrawElements(GL.LINES, face.indices)
-			else
-				GL.DrawElements(GL.TRIANGLES, face.indices)
-			end
-			GL.GetError()
+	for face = search(bsp, Player.self.position).faces
+		#GL.Uniform4f(uTexU, face.tex_u)
+		#GL.Uniform4f(uTexV, face.tex_v)
+		write(uNormal, face.normal)
+		write(numLightsUniform, int32(length(face.lights)+1))
+		i = 4
+		for light = face.lights
+			write(lightUniforms[i], light.origin); i += 1
+			write(lightUniforms[i], light.color); i += 1
+			write(lightUniforms[i], light.power); i += 1
 		end
+		if wireframe_only
+			GL.DrawElements(GL.LINES, face.indices)
+		else
+			GL.DrawElements(GL.TRIANGLES, face.indices)
+		end
+		GL.GetError()
 	end
 
 	GL.BindVertexArray(0)
