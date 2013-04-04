@@ -1,10 +1,9 @@
 import GL
 import GLFW
+importall BSP
 importall ImmutableArrays
 importall Input
 importall Player
-
-include("bsp.jl")
 
 bspFile = open(ARGS[1])
 bsp = read(bspFile, Bsp)
@@ -32,7 +31,7 @@ void main()
 }
 "
 
-maxLights = bsp.max_lights + 1
+maxLights = 30 #bsp.max_lights + 1
 const fragment_shader_src = string("
 #version 420
 
@@ -312,8 +311,8 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	GL.BindVertexArray(vao)
 
-	for faces = bsp.leaf_faces
-		for face = faces
+	for leaf = search(bsp, Player.self.position).visible
+		for face = leaf.faces
 			#GL.Uniform4f(uTexU, face.tex_u)
 			#GL.Uniform4f(uTexV, face.tex_v)
 			write(uNormal, face.normal)
