@@ -160,12 +160,16 @@ function read(io::IO, ::Type{Bsp})
 
 	leaves = Array(Tree.Leaf,0)
 	for leaf = bin_leaves
+		leaf_faces = Array(Mesh.Face,0)
 		first = leaf.first_face + 1
 		last = first + leaf.num_faces - 1
-		indices = leaf2face[first:last]
-		leaf_faces = Array(Mesh.Face,0)
-		for i = indices
-			push!(leaf_faces, faces[i+1])
+		for i = leaf2face[first:last]
+			face = faces[i+1]
+			if contains(leaf_faces, face)
+				warn("duplicate face in leaf")
+			else
+				push!(leaf_faces, face)
+			end
 		end
 		push!(leaves, Tree.Leaf(Array(Tree.Leaf,0), leaf_faces))
 	end
@@ -173,7 +177,8 @@ function read(io::IO, ::Type{Bsp})
 	###   Populate Tree.Leaves visibility info   ###############################
 
 	for leaf = leaves
-		push!(leaf.visible, leaf)
+		leaf.visible = leaves
+		#push!(leaf.visible, leaf)
 	end
 
 	###   Build BSP tree   #####################################################
@@ -253,17 +258,38 @@ function read(io::IO, ::Type{Bsp})
 						break
 					end
 				end
-				if lit
+				if lit && !contains(face.lights, light)
 					push!(face.lights, light)
 				end
 			end
 		end
 	end
 
+	###   Calculate leaf statistics   ##########################################
+
+	leaf_stats = Array(Int,0)
+	for leaf = leaves
+		push!(leaf_stats, length(leaf.faces))
+	end
+	println("faces per leaf:")
+	println("min:    ", min(leaf_stats))
+	println("mean:   ", mean(leaf_stats))
+	println("median: ", median(leaf_stats))
+	println("max:    ", max(leaf_stats))
+	println(length(faces))
+	println(sum(leaf_stats))
+
+	###   Calculate light statistics   #########################################
+
 	light_stats = Array(Int,0)
 	for face = faces
 		push!(light_stats, length(face.lights))
 	end
+	println("lights per face:")
+	println("min:    ", min(light_stats))
+	println("mean:   ", mean(light_stats))
+	println("median: ", median(light_stats))
+	println("max:    ", max(light_stats))
 
 	return Bsp(tree, entities, bin_vertices, max(light_stats))
 end

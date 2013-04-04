@@ -3,7 +3,7 @@ module Mesh
 importall ImmutableArrays
 import GL
 
-immutable Light
+type Light
 	origin::Vector3{Float32}
 	color::Vector3{Float32}
 	power::Float32
