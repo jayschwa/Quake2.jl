@@ -309,7 +309,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 			write(lightUniforms[i], light.power); i += 1
 		end
 		if wireframe_only
-			GL.DrawElements(GL.LINES, face.indices)
+			GL.DrawElements(GL.LINE_LOOP, face.indices)
 		else
 			GL.DrawElements(GL.TRIANGLES, face.indices)
 		end
