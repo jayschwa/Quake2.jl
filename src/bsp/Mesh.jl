@@ -34,16 +34,41 @@ function islit(face::Face, vertices::Vector{Vertex}, light::Light)
 	v = vertices[face.indices[1]+1]
 	d = -dot(face.normal, v)
 
-	# is the light radius within range of the face's plane?
+	# is light radius within range of face's plane?
 	dist = dot(face.normal, light.origin) + d
 	if dist < 0 || dist > light.power
 		return false
 	end
 
-	# TODO: does the light origin project onto the face?
-	# TODO: does the light sphere intersect an edge?
+	# project light onto face's plane
+	projected_origin = light.origin - face.normal * dist
+	projected_power = light.power * sin(acos(dist / light.power))
 
-	return true
+	# check if projected light radius intersects any triangles in face
+	for tri = 0:floor(length(face.indices)/3)-1
+		inside_triangle = true
+		for edge = 0:2
+			i1 = tri*3+edge+1
+			i2 = tri*3+(edge+1)%3+1
+			v1 = vertices[face.indices[i1]+1]
+			v2 = vertices[face.indices[i2]+1]
+			edge_normal = cross(face.normal, v1-v2)
+			edge_normal /= norm(edge_normal)
+			d = -dot(edge_normal, v1)
+			dist = dot(edge_normal, projected_origin) + d
+			if abs(dist) < projected_power
+				return true
+			end
+			if dist > 0
+				inside_triangle = false
+			end
+		end
+		if inside_triangle
+			return true
+		end
+	end
+
+	return false
 end
 
 end
