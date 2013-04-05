@@ -233,23 +233,7 @@ GL.UseProgram(prog)
 light1_pos = GL.Vec3(250, 0, 55)
 light1_pow = float32(20)
 
-function key_cb(key::Cint, action::Cint)
-	if action == 1
-		if key == '0'
-			global wireframe_only = !wireframe_only
-		end
-		if key == '1'
-			global ambient_lighting_on = !ambient_lighting_on
-		end
-		if key == '2'
-			global diffuse_lighting_on = !diffuse_lighting_on
-		end
-		if key == '3'
-			global specular_lighting_on = !specular_lighting_on
-		end
-	end
-	return
-end
+toggle_wireframe() = global wireframe_only = !wireframe_only
 
 ambient_lighting_on = false
 diffuse_lighting_on = true
@@ -272,6 +256,8 @@ bind(GLFW.KEY_UP, lookup)
 bind(GLFW.KEY_DOWN, lookdown)
 bind(GLFW.KEY_LEFT, left)
 bind(GLFW.KEY_RIGHT, right)
+
+bind('1', toggle_wireframe)
 
 GLFW.SetKeyCallback(Input.event)
 GLFW.SetMouseButtonCallback(Input.event)
