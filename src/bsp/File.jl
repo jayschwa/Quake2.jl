@@ -244,6 +244,8 @@ function read(io::IO, ::Type{Bsp})
 		c = bin_leaves[i].cluster
 		if c != uint16(-1)
 			leaf.faces = faces_from_cluster[c]
+		else
+			leaf.faces = faces
 		end
 	end
 
