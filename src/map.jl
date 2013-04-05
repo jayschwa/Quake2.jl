@@ -52,7 +52,6 @@ uniform bool SpecularLighting;
 uniform vec3 AmbientLight;
 uniform int NumLights;
 uniform light_t Light[", maxLights, "];
-uniform float Dev;
 
 in vec3 FragPosition;
 
@@ -66,7 +65,7 @@ void main()
 		vec3 lightDir = normalize(Light[i].Position - FragPosition);
 		float dirMod = dot(FaceNormal, lightDir); // -1 to 1
 		dirMod = max(0.2 + 0.8 * dirMod, 0);
-		float lightDist = max(distance(Light[i].Position, FragPosition), Dev);
+		float lightDist = distance(Light[i].Position, FragPosition);
 		float distMod = (Light[i].Power - lightDist) / Light[i].Power;
 		distMod = pow(clamp(distMod, 0.0, 1.0), 2);
 		if (DiffuseLighting) {
@@ -169,8 +168,6 @@ uProj = GL.Uniform(prog, "ProjMatrix")
 uCamPos = GL.Uniform(prog, "CameraPosition")
 
 uNormal = GL.Uniform(prog, "FaceNormal")
-
-uDev = GL.Uniform(prog, "Dev")
 
 #uTexU = GL.Uniform(prog, "TexU")
 #uTexV = GL.Uniform(prog, "TexV")
@@ -279,7 +276,6 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	write(uProj, projMatrix)
 
 	write(uCamPos, Player.self.position)
-	write(uDev, light1_pow)
 
 	if wireframe_only
 		write(uAmbient, GL.Vec3(0.1, 0.1, 0.1))
