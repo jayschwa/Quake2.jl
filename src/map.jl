@@ -5,81 +5,6 @@ importall ImmutableArrays
 importall Input
 importall Player
 
-bspFile = open(ARGS[1])
-bsp = read(bspFile, Bsp)
-close(bspFile)
-
-const vertex_shader_src = "
-#version 420
-
-uniform mat4 ModelMatrix;
-uniform mat4 ViewMatrix;
-uniform mat4 ProjMatrix;
-
-uniform vec4 TexU;
-uniform vec4 TexV;
-
-in vec3 VertexPosition;
-
-out vec3 FragPosition;
-
-void main()
-{
-	FragPosition = VertexPosition;
-	const vec4 pos = vec4(VertexPosition, 1.0);
-	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
-}
-"
-
-maxLights = bsp.max_lights + 1
-const fragment_shader_src = string("
-#version 420
-
-struct light_t
-{
-	vec3 Position;
-	vec3 Color;
-	float Power;
-};
-
-uniform vec3 CameraPosition;
-
-uniform vec3 FaceNormal;
-
-uniform bool DiffuseLighting;
-uniform bool SpecularLighting;
-
-uniform vec3 AmbientLight;
-uniform int NumLights;
-uniform light_t Light[", maxLights, "];
-
-in vec3 FragPosition;
-
-out vec4 FragColor;
-
-void main()
-{
-	vec3 LightColor = AmbientLight;
-	vec3 camReflectDir = normalize(reflect(normalize(FragPosition - CameraPosition), FaceNormal));
-	for (int i = 0; i < NumLights; i++) {
-		vec3 lightDir = normalize(Light[i].Position - FragPosition);
-		float dirMod = dot(FaceNormal, lightDir); // -1 to 1
-		dirMod = max(0.2 + 0.8 * dirMod, 0);
-		float lightDist = distance(Light[i].Position, FragPosition);
-		float distMod = (Light[i].Power - lightDist) / Light[i].Power;
-		distMod = pow(clamp(distMod, 0.0, 1.0), 2);
-		if (DiffuseLighting) {
-			LightColor += Light[i].Color * dirMod * distMod;
-		}
-		if (SpecularLighting) {
-			LightColor += Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 10) * distMod * min(pow(1.5 * lightDist / Light[i].Power, 3), 1);
-		}
-	}
-	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
-	FragColor = vec4(LightColor, 1.0);
-}
-")
-
 const near = 4
 const far = 16384
 projMatrix = eye(Matrix4x4{Float32})
@@ -147,6 +72,91 @@ println("Vendor:   ", GL.GetString(GL.VENDOR))
 println("Renderer: ", GL.GetString(GL.RENDERER))
 println("Version:  ", GL.GetString(GL.VERSION))
 println("GLSL:     ", GL.GetString(GL.SHADING_LANGUAGE_VERSION))
+
+bspFile = open(ARGS[1])
+bsp = read(bspFile, Bsp)
+close(bspFile)
+
+const vertex_shader_src = "
+#version 420
+
+uniform mat4 ModelMatrix;
+uniform mat4 ViewMatrix;
+uniform mat4 ProjMatrix;
+
+uniform vec4 TexU;
+uniform vec4 TexV;
+
+in vec3 VertexPosition;
+
+out vec3 FragPosition;
+out vec2 TexCoords;
+
+void main()
+{
+	FragPosition = VertexPosition;
+	const vec4 pos = vec4(VertexPosition, 1.0);
+	TexCoords = vec2(0, 0);
+	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
+}
+"
+
+maxLights = bsp.max_lights + 1
+const fragment_shader_src = string("
+#version 420
+
+struct light_t
+{
+	vec3 Position;
+	vec3 Color;
+	float Power;
+};
+
+uniform vec3 CameraPosition;
+
+uniform vec3 FaceNormal;
+
+uniform bool DiffuseLighting;
+uniform bool SpecularLighting;
+
+uniform vec3 AmbientLight;
+uniform int NumLights;
+uniform light_t Light[", maxLights, "];
+
+uniform bool DiffuseMapping;
+uniform sampler2D DiffuseTex;
+
+in vec3 FragPosition;
+in vec2 TexCoords;
+
+out vec4 FragColor;
+
+void main()
+{
+	vec3 LightColor = AmbientLight;
+	vec3 camReflectDir = normalize(reflect(normalize(FragPosition - CameraPosition), FaceNormal));
+	for (int i = 0; i < NumLights; i++) {
+		vec3 lightDir = normalize(Light[i].Position - FragPosition);
+		float dirMod = dot(FaceNormal, lightDir); // -1 to 1
+		dirMod = max(0.2 + 0.8 * dirMod, 0);
+		float lightDist = distance(Light[i].Position, FragPosition);
+		float distMod = (Light[i].Power - lightDist) / Light[i].Power;
+		distMod = pow(clamp(distMod, 0.0, 1.0), 2);
+		if (DiffuseLighting) {
+			LightColor += Light[i].Color * dirMod * distMod;
+		}
+		if (SpecularLighting) {
+			LightColor += Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 10) * distMod * min(pow(1.5 * lightDist / Light[i].Power, 3), 1);
+		}
+	}
+	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
+	if (DiffuseMapping) {
+		FragColor = vec4(texture(DiffuseTex, TexCoords).rgb * LightColor, 1.0);
+	} else {
+		FragColor = vec4(LightColor, 1.0);
+	}
+}
+")
 
 vertex_shader = GL.CreateShader(GL.VERTEX_SHADER)
 GL.ShaderSource(vertex_shader, vertex_shader_src)
