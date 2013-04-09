@@ -182,6 +182,7 @@ function read(io::IO, ::Type{Bsp})
 				GL.BindTexture(GL.TEXTURE_2D, 0)
 
 				textures[texinfo.name] = Mesh.Texture(handle, uint32(width), uint32(height))
+				println(texinfo.name)
 			catch e
 				warn("something fucked up for ", fullname)
 			end
