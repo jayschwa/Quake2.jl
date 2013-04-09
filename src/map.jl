@@ -131,6 +131,9 @@ uniform light_t Light[", maxLights, "];
 uniform bool DiffuseMapping;
 uniform sampler2D DiffuseTex;
 
+uniform vec4 TexU;
+uniform vec4 TexV;
+
 in vec3 FragPosition;
 in vec2 TexCoords;
 in vec3 ViewDir;
@@ -139,11 +142,18 @@ out vec4 FragColor;
 
 void main()
 {
+	vec3 tang = normalize(TexU.xyz);
+	vec3 bitang = normalize(TexV.xyz);
+	mat3 toTangentSpace = mat3(
+		tang.x, bitang.x, FaceNormal.x,
+		tang.y, bitang.y, FaceNormal.y,
+		tang.z, bitang.z, FaceNormal.z );
+	vec3 normal = vec3(0, 0, 1);
 	vec3 LightColor = AmbientLight;
-	vec3 camReflectDir = reflect(ViewDir, FaceNormal);
+	vec3 camReflectDir = reflect(toTangentSpace * ViewDir, normal);
 	for (int i = 0; i < NumLights; i++) {
-		vec3 lightDir = normalize(Light[i].Position - FragPosition);
-		float dirMod = dot(FaceNormal, lightDir); // -1 to 1
+		vec3 lightDir = toTangentSpace * normalize(Light[i].Position - FragPosition);
+		float dirMod = dot(normal, lightDir); // -1 to 1
 		dirMod = max(dirMod, 0);
 		float lightDist = distance(Light[i].Position, FragPosition);
 		float distMod = (Light[i].Power - lightDist) / Light[i].Power;
