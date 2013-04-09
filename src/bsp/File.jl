@@ -1,19 +1,20 @@
 module File
 
+importall Images
 importall ImmutableArrays
+import GL
 import BSP.Bsp
 import Mesh
 import Tree
 
-import Base.read
-read(s::IO, t::DataType) = t(ntuple(length(t.types), x->read(s, t.types[x]))...)
+import Base:read,sizeof
 
 const Entities       = 1
 const Planes         = 2
 const Vertices       = 3
 const Visibility     = 4
 const Nodes          = 5
-const TexInfo        = 6
+const TexInfos       = 6
 const Faces          = 7
 const Lightmaps      = 8
 const Leaves         = 9
@@ -94,6 +95,27 @@ immutable VisOffsets
 	sound::Uint32
 end
 
+immutable TexInfo
+	u::Vector4{Float32}
+	v::Vector4{Float32}
+	flags::Uint32
+	value::Uint32
+	name::ASCIIString
+	next::Uint32
+end
+function read(io, ::Type{TexInfo})
+	u = read(io, Vector4{Float32})
+	v = read(io, Vector4{Float32})
+	flags = read(io, Uint32)
+	value = read(io, Uint32)
+	name = lowercase(rstrip(bytestring(read(io, Uint8, 32)), "\0"))
+	next = read(io, Uint32)
+	return TexInfo(u,v,flags,value,name,next)
+end
+sizeof(::Type{TexInfo}) = 76
+
+read(s::IO, t::DataType) = t(ntuple(length(t.types), x->read(s, t.types[x]))...)
+
 function build(idx::Integer, nodes::Vector{Node}, planes::Vector{Plane}, leaves::Vector{Tree.Leaf})
 	node = nodes[idx]
 	if node.front < 0
@@ -128,6 +150,7 @@ function read(io::IO, ::Type{Bsp})
 	bin_leaves   = readlump(io, lumps[Leaves],     Leaf)
 	bin_nodes    = readlump(io, lumps[Nodes],      Node)
 	bin_planes   = readlump(io, lumps[Planes],     Plane)
+	bin_texinfos = readlump(io, lumps[TexInfos],   TexInfo)
 	bin_vertices = readlump(io, lumps[Vertices],   Vertex)
 	bin_vis      = readlump(io, lumps[Visibility], Uint8)
 
@@ -137,6 +160,23 @@ function read(io::IO, ::Type{Bsp})
 	seek(io, lumps[Visibility].offset)
 	num_clusters = read(io, Uint32)
 	vis_offsets = read(io, VisOffsets, num_clusters)
+
+	###   Convert File.TexInfo to Mesh.Textures   ##############################
+
+	textures = Dict{String,Mesh.Texture}()
+	for texinfo = bin_texinfos
+		if !has(textures, texinfo.name)
+			fullname = string("/home/jay/q2/textures/", texinfo.name, ".png")
+			try
+				img = imread(fullname)
+				width, height = size(img)[2:3]
+				handle = GL.GenTexture()
+				textures[texinfo.name] = Mesh.Texture(handle, uint16(width), uint16(height))
+			catch e
+				warn("something fucked up for ", fullname)
+			end
+		end
+	end
 
 	###   Convert File.Faces to Mesh.Faces   ###################################
 
@@ -165,7 +205,12 @@ function read(io::IO, ::Type{Bsp})
 			normal = -normal
 		end
 
-		push!(faces, Mesh.Face(indices, normal, Array(Mesh.Light,0)))
+		texinfo = bin_texinfos[face.tex_info+1]
+		u = texinfo.u
+		v = texinfo.v
+		tex = textures[texinfo.name]
+
+		push!(faces, Mesh.Face(indices, normal, tex, u, v, Array(Mesh.Light,0)))
 	end
 
 	###   Convert File.Leaves to Tree.Leaves   #################################

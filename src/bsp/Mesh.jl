@@ -3,6 +3,12 @@ module Mesh
 importall ImmutableArrays
 import GL
 
+type Texture
+	handle::GL.Texture
+	width::Uint16
+	height::Uint16
+end
+
 type Light
 	origin::Vector3{Float32}
 	color::Vector3{Float32}
@@ -13,6 +19,9 @@ end
 type Face
 	indices::Vector{Uint16}
 	normal::Vector3{Float32}
+	texture::Texture
+	u_axis::Vector4{Float32}
+	v_axis::Vector4{Float32}
 	lights::Vector{Light}
 end
 
