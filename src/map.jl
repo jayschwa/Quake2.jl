@@ -325,7 +325,9 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	write(uCamPos, Player.self.position)
 
-	if ambient_lighting_on
+	if wireframe_only
+		write(uAmbient, GL.Vec3(0.2, 0.2, 0.2))
+	elseif ambient_lighting_on
 		write(uAmbient, GL.Vec3(0.05, 0.05, 0.05))
 	else
 		write(uAmbient, GL.Vec3(0, 0, 0))
