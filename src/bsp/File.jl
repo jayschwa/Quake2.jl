@@ -364,7 +364,7 @@ function read(io::IO, ::Type{Bsp})
 		else
 			power = float32(300)
 		end
-		power *= 1.33
+		power *= 1.5
 		push!(lights, Mesh.Light(origin, color, power))
 	end
 
