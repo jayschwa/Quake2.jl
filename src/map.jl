@@ -86,6 +86,8 @@ uniform mat4 ProjMatrix;
 
 uniform vec4 TexU;
 uniform vec4 TexV;
+uniform uint TexW;
+uniform uint TexH;
 
 in vec3 VertexPosition;
 
@@ -96,7 +98,7 @@ void main()
 {
 	FragPosition = VertexPosition;
 	const vec4 pos = vec4(VertexPosition, 1.0);
-	TexCoords = vec2(0, 0);
+	TexCoords = vec2(dot(TexU, pos) / TexW, dot(TexV, pos) / TexH);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
 }
 "
@@ -150,7 +152,7 @@ void main()
 		}
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
-	if (DiffuseMapping) {
+	if (true) {
 		FragColor = vec4(texture(DiffuseTex, TexCoords).rgb * LightColor, 1.0);
 	} else {
 		FragColor = vec4(LightColor, 1.0);
@@ -179,8 +181,10 @@ uCamPos = GL.Uniform(prog, "CameraPosition")
 
 uNormal = GL.Uniform(prog, "FaceNormal")
 
-#uTexU = GL.Uniform(prog, "TexU")
-#uTexV = GL.Uniform(prog, "TexV")
+uTexU = GL.Uniform(prog, "TexU")
+uTexV = GL.Uniform(prog, "TexV")
+uTexW = GL.Uniform(prog, "TexW")
+uTexH = GL.Uniform(prog, "TexH")
 
 aPosition = GL.GetAttribLocation(prog, "VertexPosition")
 
@@ -304,9 +308,13 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	GL.BindVertexArray(vao)
 
 	for face = search(bsp, Player.self.position).faces
-		#GL.Uniform4f(uTexU, face.tex_u)
-		#GL.Uniform4f(uTexV, face.tex_v)
 		write(uNormal, face.normal)
+
+		write(uTexU, face.u_axis)
+		write(uTexV, face.v_axis)
+		write(uTexW, face.texture.width)
+		write(uTexH, face.texture.height)
+
 		write(numLightsUniform, int32(length(face.lights)+1))
 		i = 4
 		for light = face.lights
@@ -314,11 +322,15 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 			write(lightUniforms[i], light.color); i += 1
 			write(lightUniforms[i], light.power); i += 1
 		end
+
+		GL.BindTexture(GL.TEXTURE_2D, face.texture.handle)
 		if wireframe_only
 			GL.DrawElements(GL.LINE_LOOP, face.indices)
 		else
 			GL.DrawElements(GL.TRIANGLES, face.indices)
 		end
+		GL.BindTexture(GL.TEXTURE_2D, 0)
+
 		GL.GetError()
 	end
 

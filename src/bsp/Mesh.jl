@@ -5,8 +5,8 @@ import GL
 
 type Texture
 	handle::GL.Texture
-	width::Uint16
-	height::Uint16
+	width::Uint32
+	height::Uint32
 end
 
 type Light

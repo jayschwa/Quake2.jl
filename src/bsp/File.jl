@@ -171,7 +171,17 @@ function read(io::IO, ::Type{Bsp})
 				img = imread(fullname)
 				width, height = size(img)[2:3]
 				handle = GL.GenTexture()
-				textures[texinfo.name] = Mesh.Texture(handle, uint16(width), uint16(height))
+
+				# upload image data to GPU
+				GL.BindTexture(GL.TEXTURE_2D, handle)
+				GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, width, height, GL.RGB, uint8(img[:]))
+				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR)
+				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
+				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
+				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
+				GL.BindTexture(GL.TEXTURE_2D, 0)
+
+				textures[texinfo.name] = Mesh.Texture(handle, uint32(width), uint32(height))
 			catch e
 				warn("something fucked up for ", fullname)
 			end
