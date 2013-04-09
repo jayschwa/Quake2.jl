@@ -77,7 +77,9 @@ bspFile = open(ARGS[1])
 bsp = read(bspFile, Bsp)
 close(bspFile)
 
-const vertex_shader_src = "
+maxLights = bsp.max_lights + 1
+
+const vertex_shader_src = string("
 #version 420
 
 uniform mat4 ModelMatrix;
@@ -101,9 +103,8 @@ void main()
 	TexCoords = vec2(dot(TexU, pos) / TexW, dot(TexV, pos) / TexH);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
 }
-"
+")
 
-maxLights = bsp.max_lights + 1
 const fragment_shader_src = string("
 #version 420
 
@@ -140,7 +141,7 @@ void main()
 	for (int i = 0; i < NumLights; i++) {
 		vec3 lightDir = normalize(Light[i].Position - FragPosition);
 		float dirMod = dot(FaceNormal, lightDir); // -1 to 1
-		dirMod = max(0.2 + 0.8 * dirMod, 0);
+		dirMod = max(dirMod, 0);
 		float lightDist = distance(Light[i].Position, FragPosition);
 		float distMod = (Light[i].Power - lightDist) / Light[i].Power;
 		distMod = pow(clamp(distMod, 0.0, 1.0), 2);
