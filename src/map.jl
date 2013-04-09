@@ -242,8 +242,9 @@ end
 
 GL.UseProgram(prog)
 
-light1_pos = GL.Vec3(250, 0, 55)
-light1_pow = float32(20)
+light1 = Player.State()
+Player.movedir!(light1, GL.Vec3(1,0,0), true)
+light1_pow = float32(0)
 
 ambient_lighting_on = true
 diffuse_lighting_on = true
@@ -255,7 +256,17 @@ toggle_diffuse_light() = global diffuse_lighting_on = !diffuse_lighting_on
 toggle_specular_light() = global specular_lighting_on = !specular_lighting_on
 toggle_wireframe() = global wireframe_only = !wireframe_only
 
-bind(GLFW.MOUSE_BUTTON_LEFT, in_grab)
+function fire(apply::Bool)
+	if apply
+		light1.position = Player.self.position
+		light1.orientation = Player.self.orientation
+		light1.speed = 600
+		global light1_pow = float32(300)
+	end
+end
+
+bind(GLFW.MOUSE_BUTTON_LEFT, fire)
+bind(GLFW.MOUSE_BUTTON_RIGHT, in_grab)
 bind(GLFW.KEY_ESC, in_release)
 
 # WASD in Dvorak
@@ -285,6 +296,7 @@ GLFW.SetMouseWheelCallback(Input.wheel_event)
 while GLFW.GetWindowParam(GLFW.OPENED)
 
 	Player.move!(Player.self)
+	Player.move!(light1)
 	eyedir, updir, rightdir = sphere2cartesian(Player.self.orientation)
 	rotMat = rotationMatrix(eyedir, updir)
 
@@ -306,8 +318,8 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	write(uDiffuse, diffuse_lighting_on)
 	write(uSpecular, specular_lighting_on)
 
-	write(lightUniforms[1], light1_pos)
-	write(lightUniforms[2], GL.Vec3(1.0, 1.0, 1.0))
+	write(lightUniforms[1], light1.position)
+	write(lightUniforms[2], GL.Vec3(1.0, 1.0, 0.0))
 	write(lightUniforms[3], light1_pow)
 
 	GL.BindVertexArray(vao)
