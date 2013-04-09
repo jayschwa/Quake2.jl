@@ -91,14 +91,18 @@ uniform vec4 TexV;
 uniform uint TexW;
 uniform uint TexH;
 
+uniform vec3 CameraPosition;
+
 in vec3 VertexPosition;
 
 out vec3 FragPosition;
 out vec2 TexCoords;
+out vec3 ViewDir;
 
 void main()
 {
 	FragPosition = VertexPosition;
+	ViewDir = normalize(VertexPosition - CameraPosition);
 	const vec4 pos = vec4(VertexPosition, 1.0);
 	TexCoords = vec2(dot(TexU, pos) / TexW, dot(TexV, pos) / TexH);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
@@ -115,8 +119,6 @@ struct light_t
 	float Power;
 };
 
-uniform vec3 CameraPosition;
-
 uniform vec3 FaceNormal;
 
 uniform bool DiffuseLighting;
@@ -131,13 +133,14 @@ uniform sampler2D DiffuseTex;
 
 in vec3 FragPosition;
 in vec2 TexCoords;
+in vec3 ViewDir;
 
 out vec4 FragColor;
 
 void main()
 {
 	vec3 LightColor = AmbientLight;
-	vec3 camReflectDir = normalize(reflect(normalize(FragPosition - CameraPosition), FaceNormal));
+	vec3 camReflectDir = reflect(ViewDir, FaceNormal);
 	for (int i = 0; i < NumLights; i++) {
 		vec3 lightDir = normalize(Light[i].Position - FragPosition);
 		float dirMod = dot(FaceNormal, lightDir); // -1 to 1
