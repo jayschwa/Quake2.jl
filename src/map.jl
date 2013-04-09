@@ -244,12 +244,15 @@ GL.UseProgram(prog)
 light1_pos = GL.Vec3(250, 0, 55)
 light1_pow = float32(20)
 
-toggle_wireframe() = global wireframe_only = !wireframe_only
-
-ambient_lighting_on = false
+ambient_lighting_on = true
 diffuse_lighting_on = true
 specular_lighting_on = true
 wireframe_only = false
+
+toggle_ambient_light() = global ambient_lighting_on = !ambient_lighting_on
+toggle_diffuse_light() = global diffuse_lighting_on = !diffuse_lighting_on
+toggle_specular_light() = global specular_lighting_on = !specular_lighting_on
+toggle_wireframe() = global wireframe_only = !wireframe_only
 
 bind(GLFW.MOUSE_BUTTON_LEFT, in_grab)
 bind(GLFW.KEY_ESC, in_release)
@@ -269,6 +272,9 @@ bind(GLFW.KEY_LEFT, left)
 bind(GLFW.KEY_RIGHT, right)
 
 bind('1', toggle_wireframe)
+bind('2', toggle_ambient_light)
+bind('3', toggle_diffuse_light)
+bind('4', toggle_specular_light)
 
 GLFW.SetKeyCallback(Input.event)
 GLFW.SetMouseButtonCallback(Input.event)
@@ -291,10 +297,8 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	write(uCamPos, Player.self.position)
 
-	if wireframe_only
-		write(uAmbient, GL.Vec3(0.1, 0.1, 0.1))
-	elseif ambient_lighting_on
-		write(uAmbient, bsp.ambient_light)
+	if ambient_lighting_on
+		write(uAmbient, GL.Vec3(0.05, 0.05, 0.05))
 	else
 		write(uAmbient, GL.Vec3(0, 0, 0))
 	end
