@@ -263,8 +263,10 @@ function fire(apply::Bool)
 	if apply
 		light1.position = Player.self.position
 		light1.orientation = Player.self.orientation
-		light1.speed = 600
+		light1.speed = 0
 		global light1_pow = float32(300)
+	else
+		light1.speed = 600
 	end
 end
 
