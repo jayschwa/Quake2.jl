@@ -167,8 +167,10 @@ function readheightmap(name::String)
 	# upload image data to GPU
 	GL.BindTexture(GL.TEXTURE_2D, handle)
 	GL.TexImage2D(GL.TEXTURE_2D, GL.RGBA, width, height, GL.RGBA, normals)
-	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR)
+	GL.GenerateMipmap(GL.TEXTURE_2D)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR)
 	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
+	GL.TexParameteri(GL.TEXTURE_2D, 0x84FE, 8) # anisotropic filtering
 	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
 	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
 	GL.BindTexture(GL.TEXTURE_2D, 0)
@@ -221,8 +223,10 @@ function read(io::IO, ::Type{Bsp})
 			# upload image data to GPU
 			GL.BindTexture(GL.TEXTURE_2D, diffuse)
 			GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, width, height, GL.RGB, uint8(img[:]))
-			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR)
+			GL.GenerateMipmap(GL.TEXTURE_2D)
+			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR)
 			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
+			GL.TexParameteri(GL.TEXTURE_2D, 0x84FE, 8) # anisotropic filtering
 			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
 			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
 			GL.BindTexture(GL.TEXTURE_2D, 0)
