@@ -138,6 +138,43 @@ function readlump(io::IO, lump::Lump, t::Type)
 	read(io, t, int(lump.length / sizeof(t)))
 end
 
+function readheightmap(name::String)
+	img = imread(string(name, ".height.png"))
+	width, height = size(img)[2:3]
+	gray = uint8(convert(Array, img))
+	handle = GL.GenTexture()
+
+	# create normals from heights
+	normals = Array(Uint8, 0)
+	for w = 1:width
+		wp = clamp(w-1,1,width)
+		wn = clamp(w+1,1,width)
+		for h = 1:height
+			hp = clamp(h-1,1,height)
+			hn = clamp(h+1,1,height)
+			x = int(gray[wn,h] - gray[wp,h]) / 16.0
+			y = int(gray[w,hn] - gray[w,hp]) / 16.0
+			n = Vector3(x,y,1.0)
+			n /= norm(n)
+			n = uint8(n * (255/2) + (255/2))
+			push!(normals, n[1])
+			push!(normals, n[2])
+			push!(normals, n[3])
+			push!(normals, gray[w,h])
+		end
+	end
+
+	# upload image data to GPU
+	GL.BindTexture(GL.TEXTURE_2D, handle)
+	GL.TexImage2D(GL.TEXTURE_2D, GL.RGBA, width, height, GL.RGBA, normals)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
+	GL.BindTexture(GL.TEXTURE_2D, 0)
+	return handle
+end
+
 function read(io::IO, ::Type{Bsp})
 
 	###   Read in header and lump data   #######################################
@@ -175,27 +212,29 @@ function read(io::IO, ::Type{Bsp})
 	textures = Dict{String,Mesh.Texture}()
 	for texinfo = bin_texinfos
 		if !has(textures, texinfo.name)
-			fullname = string("/home/jay/q2/textures/", texinfo.name, ".png")
+			fullpath = string("/home/jay/q2/textures/", texinfo.name)
+			img = imread(string(fullpath, ".png"))
+			width = uint32(size(img)[2])
+			height = uint32(size(img)[3])
+			diffuse = GL.GenTexture()
+
+			# upload image data to GPU
+			GL.BindTexture(GL.TEXTURE_2D, diffuse)
+			GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, width, height, GL.RGB, uint8(img[:]))
+			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR)
+			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
+			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
+			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
+			GL.BindTexture(GL.TEXTURE_2D, 0)
+
+			normal = default_normal_map
 			try
-				img = imread(fullname)
-				width, height = size(img)[2:3]
-				handle = GL.GenTexture()
-
-				# upload image data to GPU
-				GL.BindTexture(GL.TEXTURE_2D, handle)
-				GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, width, height, GL.RGB, uint8(img[:]))
-				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR)
-				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
-				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
-				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
-				GL.BindTexture(GL.TEXTURE_2D, 0)
-
-				normal = default_normal_map
-				textures[texinfo.name] = Mesh.Texture(handle, normal, uint32(width), uint32(height))
-				println(texinfo.name)
+				normal = readheightmap(fullpath)
 			catch e
-				warn("something fucked up for ", fullname)
 			end
+
+			textures[texinfo.name] = Mesh.Texture(diffuse, normal, width, height)
+			println(texinfo.name)
 		end
 	end
 
