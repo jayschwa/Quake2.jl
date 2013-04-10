@@ -149,7 +149,7 @@ void main()
 		tang.x, bitang.x, FaceNormal.x,
 		tang.y, bitang.y, FaceNormal.y,
 		tang.z, bitang.z, FaceNormal.z );
-	const vec3 normal = texture(NormalMap, TexCoords).xyz;
+	const vec3 normal = 2 * (texture(NormalMap, TexCoords).xyz - vec3(0.5, 0.5, 0.5));
 	vec3 LightColor = AmbientLight;
 	vec3 camReflectDir = reflect(toTangentSpace * ViewDir, normal);
 	for (int i = 0; i < NumLights; i++) {

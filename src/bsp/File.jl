@@ -165,7 +165,7 @@ function read(io::IO, ::Type{Bsp})
 
 	default_normal_map = GL.GenTexture()
 	GL.BindTexture(GL.TEXTURE_2D, default_normal_map)
-	GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, 1, 1, GL.RGB, Uint8[0,0,255])
+	GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, 1, 1, GL.RGB, Uint8[127,127,255])
 	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST)
 	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST)
 	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
