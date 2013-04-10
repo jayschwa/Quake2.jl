@@ -37,6 +37,7 @@ function sphere2cartesian(orientation::GL.Vec3)
 	eyedir /= norm(eyedir)
 	updir = GL.Vec3(0, 0, 1)
 	rightdir = cross(eyedir, updir)
+	rightdir /= norm(rightdir)
 	return eyedir, updir, rightdir
 end
 
