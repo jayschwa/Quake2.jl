@@ -149,7 +149,10 @@ void main()
 		tang.x, bitang.x, FaceNormal.x,
 		tang.y, bitang.y, FaceNormal.y,
 		tang.z, bitang.z, FaceNormal.z );
-	const vec3 normal = 2 * (texture(NormalMap, TexCoords).xyz - vec3(0.5, 0.5, 0.5));
+	vec4 normalmap = 2 * texture(NormalMap, TexCoords) - vec4(1.0);
+	const vec2 offset = -normalmap.w * 0.03 * (toTangentSpace * ViewDir).xy;
+	normalmap = 2 * texture(NormalMap, TexCoords+offset) - vec4(1.0);
+	const vec3 normal = normalmap.xyz;
 	vec3 LightColor = AmbientLight;
 	vec3 camReflectDir = reflect(toTangentSpace * ViewDir, normal);
 	for (int i = 0; i < NumLights; i++) {
@@ -168,7 +171,7 @@ void main()
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
 	if (true) {
-		FragColor = vec4(texture(DiffuseMap, TexCoords).rgb * LightColor, 1.0);
+		FragColor = vec4(texture(DiffuseMap, TexCoords+offset).rgb * LightColor, 1.0);
 	} else {
 		FragColor = vec4(LightColor, 1.0);
 	}
