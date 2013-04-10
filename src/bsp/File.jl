@@ -163,6 +163,15 @@ function read(io::IO, ::Type{Bsp})
 
 	###   Convert File.TexInfo to Mesh.Textures   ##############################
 
+	default_normal_map = GL.GenTexture()
+	GL.BindTexture(GL.TEXTURE_2D, default_normal_map)
+	GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, 1, 1, GL.RGB, Uint8[0,0,255])
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.REPEAT)
+	GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
+	GL.BindTexture(GL.TEXTURE_2D, 0)
+
 	textures = Dict{String,Mesh.Texture}()
 	for texinfo = bin_texinfos
 		if !has(textures, texinfo.name)
@@ -181,7 +190,8 @@ function read(io::IO, ::Type{Bsp})
 				GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.REPEAT)
 				GL.BindTexture(GL.TEXTURE_2D, 0)
 
-				textures[texinfo.name] = Mesh.Texture(handle, uint32(width), uint32(height))
+				normal = default_normal_map
+				textures[texinfo.name] = Mesh.Texture(handle, normal, uint32(width), uint32(height))
 				println(texinfo.name)
 			catch e
 				warn("something fucked up for ", fullname)

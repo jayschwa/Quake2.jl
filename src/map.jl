@@ -129,7 +129,8 @@ uniform int NumLights;
 uniform light_t Light[", maxLights, "];
 
 uniform bool DiffuseMapping;
-uniform sampler2D DiffuseTex;
+uniform sampler2D DiffuseMap;
+uniform sampler2D NormalMap;
 
 uniform vec4 TexU;
 uniform vec4 TexV;
@@ -142,13 +143,13 @@ out vec4 FragColor;
 
 void main()
 {
-	vec3 tang = normalize(TexU.xyz);
-	vec3 bitang = normalize(TexV.xyz);
-	mat3 toTangentSpace = mat3(
+	const vec3 tang = normalize(TexU.xyz);
+	const vec3 bitang = normalize(TexV.xyz);
+	const mat3 toTangentSpace = mat3(
 		tang.x, bitang.x, FaceNormal.x,
 		tang.y, bitang.y, FaceNormal.y,
 		tang.z, bitang.z, FaceNormal.z );
-	vec3 normal = vec3(0, 0, 1);
+	const vec3 normal = texture(NormalMap, TexCoords).xyz;
 	vec3 LightColor = AmbientLight;
 	vec3 camReflectDir = reflect(toTangentSpace * ViewDir, normal);
 	for (int i = 0; i < NumLights; i++) {
@@ -167,7 +168,7 @@ void main()
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
 	if (true) {
-		FragColor = vec4(texture(DiffuseTex, TexCoords).rgb * LightColor, 1.0);
+		FragColor = vec4(texture(DiffuseMap, TexCoords).rgb * LightColor, 1.0);
 	} else {
 		FragColor = vec4(LightColor, 1.0);
 	}
@@ -254,6 +255,8 @@ for i = 0:maxLights-1
 end
 
 GL.UseProgram(prog)
+write(GL.Uniform(prog, "DiffuseMap"), int32(0))
+write(GL.Uniform(prog, "NormalMap"), int32(1))
 
 light1 = Player.State()
 Player.movedir!(light1, GL.Vec3(1,0,0), true)
@@ -357,13 +360,16 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 			write(lightUniforms[i], light.power); i += 1
 		end
 
-		GL.BindTexture(GL.TEXTURE_2D, face.texture.handle)
+		GL.ActiveTexture(GL.TEXTURE0)
+		GL.BindTexture(GL.TEXTURE_2D, face.texture.diffuse)
+		GL.ActiveTexture(GL.TEXTURE1)
+		GL.BindTexture(GL.TEXTURE_2D, face.texture.normal)
+
 		if wireframe_only
 			GL.DrawElements(GL.LINE_LOOP, face.indices)
 		else
 			GL.DrawElements(GL.TRIANGLES, face.indices)
 		end
-		GL.BindTexture(GL.TEXTURE_2D, 0)
 
 		GL.GetError()
 	end
