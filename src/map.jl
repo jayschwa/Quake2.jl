@@ -163,10 +163,10 @@ void main()
 		float distMod = (Light[i].Power - lightDist) / Light[i].Power;
 		distMod = pow(clamp(distMod, 0.0, 1.0), 2);
 		if (DiffuseLighting) {
-			LightColor += Light[i].Color * dirMod * distMod;
+			LightColor += 1.5 * Light[i].Color * dirMod * distMod;
 		}
 		if (SpecularLighting) {
-			LightColor += Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 10) * distMod * 0.8;
+			LightColor += 1.5 * Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 10) * distMod * 0.8;
 		}
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
@@ -334,7 +334,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	if wireframe_only
 		write(uAmbient, GL.Vec3(0.2, 0.2, 0.2))
 	elseif ambient_lighting_on
-		write(uAmbient, GL.Vec3(0.05, 0.05, 0.05))
+		write(uAmbient, GL.Vec3(0.075, 0.075, 0.075))
 	else
 		write(uAmbient, GL.Vec3(0, 0, 0))
 	end
