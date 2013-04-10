@@ -141,7 +141,7 @@ end
 function readheightmap(name::String)
 	img = imread(string(name, ".height.png"))
 	width, height = size(img)[2:3]
-	gray = uint8(convert(Array, img))
+	gray = uint8(convert(Array, img))[:,:,1]
 	handle = GL.GenTexture()
 
 	# create normals from heights
@@ -152,8 +152,8 @@ function readheightmap(name::String)
 		for h = 1:height
 			hp = clamp(h-1,1,height)
 			hn = clamp(h+1,1,height)
-			x = int(gray[wn,h] - gray[wp,h]) / 16.0
-			y = int(gray[w,hn] - gray[w,hp]) / 16.0
+			x = int(gray[w,hp] - gray[w,hn]) / 16.0
+			y = int(gray[wp,h] - gray[wn,h]) / 16.0
 			n = Vector3(x,y,1.0)
 			n /= norm(n)
 			n = uint8(n * (255/2) + (255/2))
