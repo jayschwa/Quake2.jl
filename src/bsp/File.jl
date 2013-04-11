@@ -4,8 +4,8 @@ importall Images
 importall ImmutableArrays
 import GL
 import BSP.Bsp
-import Mesh
-import Tree
+import ..Mesh
+import ..Tree
 
 import Base:read,sizeof
 

@@ -1,7 +1,7 @@
 module Tree
 
 importall ImmutableArrays
-import Mesh.Face
+import ..Mesh.Face
 import Base:cmp,search
 
 type Leaf
