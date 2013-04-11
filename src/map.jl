@@ -119,6 +119,8 @@ struct light_t
 	float Power;
 };
 
+uniform int DrawMode;
+
 uniform vec3 FaceNormal;
 
 uniform bool DiffuseLighting;
@@ -170,11 +172,20 @@ void main()
 		}
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
-	if (true) {
-		FragColor = vec4(texture(DiffuseMap, TexCoords+offset).rgb * LightColor, 1.0);
+
+	if (DrawMode == 1) {
+		FragColor.rgb = LightColor;
+	} else if (DrawMode == 2) {
+		FragColor.rgb = texture(DiffuseMap, TexCoords).rgb;
+	} else if (DrawMode == 3) {
+		FragColor.rgb = vec3(texture(NormalMap, TexCoords).a);
+	} else if (DrawMode == 4) {
+		FragColor.rgb = texture(NormalMap, TexCoords).rgb;
 	} else {
-		FragColor = vec4(LightColor, 1.0);
+		FragColor.rgb = texture(DiffuseMap, TexCoords+offset).rgb;
+		FragColor.rgb *= LightColor;
 	}
+	FragColor.a = 1.0;
 }
 ")
 
@@ -245,6 +256,7 @@ function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVecto
 	Vector4{Float32}( 0,  0,  0,  1))
 end
 
+uDrawMode = GL.Uniform(prog, "DrawMode")
 uAmbient = GL.Uniform(prog, "AmbientLight")
 uDiffuse = GL.Uniform(prog, "DiffuseLighting")
 uSpecular = GL.Uniform(prog, "SpecularLighting")
@@ -265,6 +277,7 @@ light1 = Player.State()
 Player.movedir!(light1, GL.Vec3(1,0,0), true)
 light1_pow = float32(0)
 
+draw_mode = 0
 ambient_lighting_on = true
 diffuse_lighting_on = true
 specular_lighting_on = true
@@ -304,10 +317,23 @@ bind(GLFW.KEY_DOWN, lookdown)
 bind(GLFW.KEY_LEFT, left)
 bind(GLFW.KEY_RIGHT, right)
 
-bind('1', toggle_wireframe)
-bind('2', toggle_ambient_light)
-bind('3', toggle_diffuse_light)
-bind('4', toggle_specular_light)
+draw_mode_0() = global draw_mode = 0
+draw_mode_1() = global draw_mode = 1
+draw_mode_2() = global draw_mode = 2
+draw_mode_3() = global draw_mode = 3
+draw_mode_4() = global draw_mode = 4
+
+bind('0', draw_mode_0)
+bind('1', draw_mode_1)
+bind('2', draw_mode_2)
+bind('3', draw_mode_3)
+bind('4', draw_mode_4)
+
+bind('6', toggle_ambient_light)
+bind('7', toggle_diffuse_light)
+bind('8', toggle_specular_light)
+
+bind('[', toggle_wireframe)
 
 GLFW.SetKeyCallback(Input.event)
 GLFW.SetMouseButtonCallback(Input.event)
@@ -331,6 +357,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	write(uCamPos, Player.self.position)
 
+	write(uDrawMode, int32(draw_mode))
 	if wireframe_only
 		write(uAmbient, GL.Vec3(0.2, 0.2, 0.2))
 	elseif ambient_lighting_on
