@@ -139,7 +139,7 @@ function readlump(io::IO, lump::Lump, t::Type)
 end
 
 function readheightmap(name::String)
-	img = imread(string(name, ".height.png"))
+	img = imread(string("/home/jay/q2renew/textures/", name, ".height.png"))
 	width, height = size(img)[2:3]
 	gray = uint8(convert(Array, img))[:,:,1]
 	handle = GL.GenTexture()
@@ -152,8 +152,8 @@ function readheightmap(name::String)
 		for h = 1:height
 			hp = h-1>=1 ? h-1 : height
 			hn = h+1<=height ? h+1 : 1
-			x = int(gray[w,hp] - gray[w,hn]) / 16.0
-			y = int(gray[wp,h] - gray[wn,h]) / 16.0
+			x = int(gray[w,hp] - gray[w,hn]) / 32.0
+			y = int(gray[wp,h] - gray[wn,h]) / 32.0
 			n = Vector3(x,y,1.0)
 			n /= norm(n)
 			n = uint8(n * (255/2) + (255/2))
@@ -214,8 +214,7 @@ function read(io::IO, ::Type{Bsp})
 	textures = Dict{String,Mesh.Texture}()
 	for texinfo = bin_texinfos
 		if !has(textures, texinfo.name)
-			fullpath = string("/home/jay/q2/textures/", texinfo.name)
-			img = imread(string(fullpath, ".png"))
+			img = imread(string("/home/jay/q2/textures/", texinfo.name, ".png"))
 			width = uint32(size(img)[2])
 			height = uint32(size(img)[3])
 			diffuse = GL.GenTexture()
@@ -233,8 +232,10 @@ function read(io::IO, ::Type{Bsp})
 
 			normal = default_normal_map
 			try
-				normal = readheightmap(fullpath)
+				normal = readheightmap(texinfo.name)
+				print("[h] ")
 			catch e
+				print("[ ] ")
 			end
 
 			textures[texinfo.name] = Mesh.Texture(diffuse, normal, width, height)
