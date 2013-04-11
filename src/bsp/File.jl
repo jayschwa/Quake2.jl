@@ -147,11 +147,11 @@ function readheightmap(name::String)
 	# create normals from heights
 	normals = Array(Uint8, 0)
 	for w = 1:width
-		wp = clamp(w-1,1,width)
-		wn = clamp(w+1,1,width)
+		wp = w-1>=1 ? w-1 : width
+		wn = w+1<=width ? w+1 : 1
 		for h = 1:height
-			hp = clamp(h-1,1,height)
-			hn = clamp(h+1,1,height)
+			hp = h-1>=1 ? h-1 : height
+			hn = h+1<=height ? h+1 : 1
 			x = int(gray[w,hp] - gray[w,hn]) / 16.0
 			y = int(gray[wp,h] - gray[wn,h]) / 16.0
 			n = Vector3(x,y,1.0)
