@@ -214,7 +214,7 @@ function read(io::IO, ::Type{Bsp})
 	textures = Dict{String,Mesh.Texture}()
 	for texinfo = bin_texinfos
 		if !has(textures, texinfo.name)
-			img = imread(string("/home/jay/q2/textures/", texinfo.name, ".png"))
+			img = imread(string("/home/jay/q2/textures/", texinfo.name, ".wal"))
 			width = uint32(size(img)[2])
 			height = uint32(size(img)[3])
 			diffuse = GL.GenTexture()
