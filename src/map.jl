@@ -159,6 +159,9 @@ void main()
 	vec3 camReflectDir = reflect(toTangentSpace * ViewDir, normal);
 	for (int i = 0; i < NumLights; i++) {
 		vec3 lightDir = toTangentSpace * normalize(Light[i].Position - FragPosition);
+		if (lightDir.z < 0) {
+			continue;
+		}
 		float dirMod = dot(normal, lightDir); // -1 to 1
 		dirMod = max(dirMod, 0);
 		float lightDist = distance(Light[i].Position, FragPosition);
