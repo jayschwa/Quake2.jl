@@ -2,6 +2,7 @@ module File
 
 importall Images
 importall ImmutableArrays
+importall FileSystem
 import GL
 import BSP.Bsp
 import ..Mesh

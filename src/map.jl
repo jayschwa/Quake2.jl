@@ -3,6 +3,7 @@ import GLFW
 importall BSP
 importall ImmutableArrays
 importall Input
+importall FileSystem
 importall Player
 
 const near = 4
@@ -73,7 +74,7 @@ println("Renderer: ", GL.GetString(GL.RENDERER))
 println("Version:  ", GL.GetString(GL.VERSION))
 println("GLSL:     ", GL.GetString(GL.SHADING_LANGUAGE_VERSION))
 
-bspFile = open(ARGS[1])
+bspFile = qopen(ARGS[1])
 bsp = read(bspFile, Bsp)
 close(bspFile)
 
