@@ -219,7 +219,10 @@ function read(io::IO, ::Type{Bsp})
 				println(texinfo.flags, ", ", texinfo.value)
 			end
 
-			img = imread(string("/home/jay/q2/textures/", texinfo.name, ".wal"))
+			f = qopen(string("textures/", texinfo.name, ".wal"))
+			img = imread(f, Images.QuakeWAL)
+			close(f)
+
 			width = uint32(size(img)[2])
 			height = uint32(size(img)[3])
 			diffuse = GL.GenTexture()
