@@ -8,6 +8,7 @@ type Texture
 	normal::GL.Texture
 	width::Uint32
 	height::Uint32
+	flags::Uint32
 end
 
 type Light

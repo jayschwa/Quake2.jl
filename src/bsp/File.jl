@@ -214,6 +214,10 @@ function read(io::IO, ::Type{Bsp})
 	textures = Dict{String,Mesh.Texture}()
 	for texinfo = bin_texinfos
 		if !has(textures, texinfo.name)
+			if texinfo.flags > 0
+				println(texinfo.flags, ", ", texinfo.value)
+			end
+
 			img = imread(string("/home/jay/q2/textures/", texinfo.name, ".wal"))
 			width = uint32(size(img)[2])
 			height = uint32(size(img)[3])
@@ -238,7 +242,7 @@ function read(io::IO, ::Type{Bsp})
 				print("[ ] ")
 			end
 
-			textures[texinfo.name] = Mesh.Texture(diffuse, normal, width, height)
+			textures[texinfo.name] = Mesh.Texture(diffuse, normal, width, height, texinfo.flags)
 			println(texinfo.name)
 		end
 	end

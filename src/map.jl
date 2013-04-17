@@ -133,6 +133,7 @@ uniform light_t Light[", maxLights, "];
 uniform bool DiffuseMapping;
 uniform sampler2D DiffuseMap;
 uniform sampler2D NormalMap;
+uniform uint SurfFlags;
 
 uniform vec4 TexU;
 uniform vec4 TexV;
@@ -174,6 +175,9 @@ void main()
 			LightColor += 1.5 * Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 10) * distMod * 0.8;
 		}
 	}
+	if (uint(SurfFlags & 1) != 0) {
+		LightColor = vec3(1.0);
+	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
 
 	if (DrawMode == 1) {
@@ -213,6 +217,7 @@ uCamPos = GL.Uniform(prog, "CameraPosition")
 
 uNormal = GL.Uniform(prog, "FaceNormal")
 
+uSurfFlags = GL.Uniform(prog, "SurfFlags")
 uTexU = GL.Uniform(prog, "TexU")
 uTexV = GL.Uniform(prog, "TexV")
 uTexW = GL.Uniform(prog, "TexW")
@@ -380,6 +385,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	for face = search(bsp, Player.self.position).faces
 		write(uNormal, face.normal)
 
+		write(uSurfFlags, face.texture.flags)
 		write(uTexU, face.u_axis)
 		write(uTexV, face.v_axis)
 		write(uTexW, face.texture.width)
