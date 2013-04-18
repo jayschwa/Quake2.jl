@@ -197,18 +197,8 @@ void main()
 }
 ")
 
-vertex_shader = GL.CreateShader(GL.VERTEX_SHADER)
-GL.ShaderSource(vertex_shader, vertex_shader_src)
-GL.CompileShader(vertex_shader)
-
-fragment_shader = GL.CreateShader(GL.FRAGMENT_SHADER)
-GL.ShaderSource(fragment_shader, fragment_shader_src)
-GL.CompileShader(fragment_shader)
-
-prog = GL.CreateProgram()
-GL.AttachShader(prog, vertex_shader)
-GL.AttachShader(prog, fragment_shader)
-GL.LinkProgram(prog)
+prog = GL.Program([GL.VERTEX_SHADER   => vertex_shader_src,
+                   GL.FRAGMENT_SHADER => fragment_shader_src])
 
 uModel = GL.Uniform(prog, "ModelMatrix")
 uView = GL.Uniform(prog, "ViewMatrix")
