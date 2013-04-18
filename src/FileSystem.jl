@@ -12,8 +12,8 @@ pak_files = Dict{String,PakFile}()
 function scan()
 	for path = search_paths
 		paks = map(x->path*"/"*x, union(
-			filter(x->ismatch(r"pak[0-9]+\.pak$",x), readdir(path)),
-			filter(x->ismatch(r"\.pak$",x), readdir(path))
+			filter(r"pak[0-9]+\.pak$", readdir(path)),
+			filter(r"\.pak$", readdir(path))
 		))
 		for pak = paks
 			scan(pak)
