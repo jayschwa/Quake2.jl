@@ -74,7 +74,7 @@ println("Renderer: ", GL.GetString(GL.RENDERER))
 println("Version:  ", GL.GetString(GL.VERSION))
 println("GLSL:     ", GL.GetString(GL.SHADING_LANGUAGE_VERSION))
 
-bspFile = qopen(ARGS[1])
+bspFile = qopen(string("maps/", ARGS[1], ".bsp"))
 bsp = read(bspFile, Bsp)
 close(bspFile)
 
