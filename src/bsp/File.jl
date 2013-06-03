@@ -274,6 +274,11 @@ function read(io::IO, ::Type{Bsp})
 			end
 		end
 
+		ibo = GL.GenBuffer()
+		GL.BindBuffer(GL.ELEMENT_ARRAY_BUFFER, ibo)
+		GL.BufferData(GL.ELEMENT_ARRAY_BUFFER, indices, GL.STATIC_DRAW)
+		GL.BindBuffer(GL.ELEMENT_ARRAY_BUFFER, 0)
+
 		normal = bin_planes[face.plane+1].normal
 		if face.plane_side != 0
 			normal = -normal
@@ -284,7 +289,7 @@ function read(io::IO, ::Type{Bsp})
 		v = texinfo.v
 		tex = textures[texinfo.name]
 
-		push!(faces, Mesh.Face(indices, normal, tex, u, v, Array(Mesh.Light,0)))
+		push!(faces, Mesh.Face(indices, ibo, normal, tex, u, v, Array(Mesh.Light,0)))
 	end
 
 	###   Convert File.Leaves to Tree.Leaves   #################################

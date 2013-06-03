@@ -20,6 +20,7 @@ end
 
 type Face
 	indices::Vector{Uint16}
+	ibo::GL.Buffer
 	normal::Vector3{Float32}
 	texture::Texture
 	u_axis::Vector4{Float32}

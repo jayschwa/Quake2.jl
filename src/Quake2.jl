@@ -395,11 +395,13 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 		GL.ActiveTexture(GL.TEXTURE1)
 		GL.BindTexture(GL.TEXTURE_2D, face.texture.normal)
 
+		draw = GL.TRIANGLES
 		if wireframe_only
-			GL.DrawElements(GL.LINE_LOOP, face.indices)
-		else
-			GL.DrawElements(GL.TRIANGLES, face.indices)
+			draw = GL.LINE_LOOP
 		end
+		GL.BindBuffer(GL.ELEMENT_ARRAY_BUFFER, face.ibo);
+		GL.DrawElements(draw, length(face.indices), GL.UNSIGNED_SHORT, 0)
+		GL.BindBuffer(GL.ELEMENT_ARRAY_BUFFER, 0);
 
 		GL.GetError()
 	end
