@@ -6,7 +6,7 @@ immutable PakFile
 	len::Uint32
 end
 
-search_paths = String["/home/jay/q2", "/home/jay/q2renew"]
+search_paths = String[string(ENV["HOME"], "/q2")]
 pak_files = Dict{String,PakFile}()
 
 function scan()
