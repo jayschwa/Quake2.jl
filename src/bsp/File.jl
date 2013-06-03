@@ -3,6 +3,7 @@ module File
 importall Images
 importall ImmutableArrays
 importall FileSystem
+importall Textures
 import GL
 import BSP.Bsp
 import ..Mesh
@@ -220,7 +221,7 @@ function read(io::IO, ::Type{Bsp})
 			end
 
 			f = qopen(string("textures/", texinfo.name, ".wal"))
-			img = imread(f, Images.QuakeWAL)
+			img = imread(f, Textures.WAL)
 			close(f)
 
 			width = uint32(size(img)[2])
