@@ -81,7 +81,7 @@ close(bspFile)
 maxLights = bsp.max_lights + 1
 
 const vertex_shader_src = string("
-#version 420
+#version 150
 
 uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
@@ -104,14 +104,14 @@ void main()
 {
 	FragPosition = VertexPosition;
 	ViewDir = normalize(VertexPosition - CameraPosition);
-	const vec4 pos = vec4(VertexPosition, 1.0);
+	vec4 pos = vec4(VertexPosition, 1.0);
 	TexCoords = vec2(dot(TexU, pos) / TexW, dot(TexV, pos) / TexH);
 	gl_Position = ProjMatrix * ViewMatrix * ModelMatrix * pos;
 }
 ")
 
 const fragment_shader_src = string("
-#version 420
+#version 150
 
 struct light_t
 {
@@ -147,16 +147,16 @@ out vec4 FragColor;
 
 void main()
 {
-	const vec3 tang = normalize(TexU.xyz);
-	const vec3 bitang = normalize(TexV.xyz);
-	const mat3 toTangentSpace = mat3(
+	vec3 tang = normalize(TexU.xyz);
+	vec3 bitang = normalize(TexV.xyz);
+	mat3 toTangentSpace = mat3(
 		tang.x, bitang.x, FaceNormal.x,
 		tang.y, bitang.y, FaceNormal.y,
 		tang.z, bitang.z, FaceNormal.z );
 	vec4 normalmap = 2 * texture(NormalMap, TexCoords) - vec4(1.0);
-	const vec2 offset = -normalmap.w * 0.03 * (toTangentSpace * ViewDir).xy;
+	vec2 offset = -normalmap.w * 0.03 * (toTangentSpace * ViewDir).xy;
 	normalmap = 2 * texture(NormalMap, TexCoords+offset) - vec4(1.0);
-	const vec3 normal = normalmap.xyz;
+	vec3 normal = normalmap.xyz;
 	vec3 LightColor = AmbientLight;
 	vec3 camReflectDir = reflect(toTangentSpace * ViewDir, normal);
 	for (int i = 0; i < NumLights; i++) {
@@ -176,7 +176,7 @@ void main()
 			LightColor += 1.5 * Light[i].Color * pow(max(dot(lightDir, camReflectDir), 0.0), 10) * distMod * 0.8;
 		}
 	}
-	if (uint(SurfFlags & 1) != 0) {
+	if (uint(SurfFlags & uint(1)) != uint(0)) { // FIXME: stupid casts
 		LightColor = vec3(1.0);
 	}
 	LightColor = min(LightColor, vec3(1.0, 1.0, 1.0));
