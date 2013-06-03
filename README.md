@@ -12,6 +12,20 @@ Features
 * Per-pixel lighting
 * Support for bump and parallax effects from heightmaps
 
+Requirements
+------------
+
+* [Julia v0.2](https://github.com/JuliaLang/julia/) (still in development - must be built from source)
+* Official Julia packages (can be added with `Pkg.add()`):
+  * [GLFW](https://github.com/jayschwa/GLFW.jl)
+  * [Images](https://github.com/timholy/Images.jl)
+  * [ImmutableArrays](https://github.com/twadleigh/ImmutableArrays.jl)
+* Unofficial Julia packages (must be added manually):
+  * [GL](https://github.com/jayschwa/GL.jl) (requires at least OpenGL 3.x)
+* Quake 2 game data (i.e. pak0.pak)
+
+Due to the fast-moving nature of Julia development and its packages, setting up an environment is not easy. In its current state, the code will likely not run outside the author's environment. Work is being done to fix this and make setup easier.
+
 Lighting
 --------
 
