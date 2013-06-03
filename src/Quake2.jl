@@ -50,7 +50,7 @@ function updateProjMatrix(width::Cint, height::Cint)
 end
 
 GLFW.Init()
-GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MAJOR, 4)
+GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MAJOR, 3)
 GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MINOR, 2)
 GLFW.OpenWindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
 GLFW.OpenWindowHint(GLFW.OPENGL_FORWARD_COMPAT, 1)
