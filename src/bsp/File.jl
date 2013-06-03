@@ -387,8 +387,8 @@ function read(io::IO, ::Type{Bsp})
 		dict = Dict{String, String}()
 		for field = split(entity, '\n')
 			fieldStr = split(strip(field), "\" \"")
-			name = lstrip(strip(fieldStr[1], "\""), "_")
-			value = strip(fieldStr[2], "\"")
+			name = lstrip(strip(fieldStr[1], '"'), "_")
+			value = strip(fieldStr[2], '"')
 			dict[name] = value
 		end
 		if length(dict) < 1
