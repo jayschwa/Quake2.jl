@@ -294,7 +294,7 @@ function fire(apply::Bool)
 		light1.speed = 0
 		global light1_pow = float32(300)
 	else
-		light1.speed = 600
+		light1.speed = 300
 	end
 end
 
