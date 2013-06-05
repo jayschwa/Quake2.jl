@@ -336,11 +336,15 @@ bind('[', toggle_wireframe)
 
 GLFW.SetKeyCallback(Input.event)
 GLFW.SetMouseButtonCallback(Input.event)
-GLFW.SetMousePosCallback(Input.look_event)
 GLFW.SetMouseWheelCallback(Input.wheel_event)
+m_x, m_y = 0, 0
 
 while GLFW.GetWindowParam(GLFW.OPENED)
 
+	if GLFW.GetMousePos() != (m_x, m_y)
+		m_x, m_y = GLFW.GetMousePos()
+		Input.look_event(m_x, m_y)
+	end
 	Player.move!(Player.self)
 	Player.move!(light1)
 	eyedir, updir, rightdir = sphere2cartesian(Player.self.orientation)
