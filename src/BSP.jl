@@ -16,7 +16,7 @@ end
 
 include("bsp/File.jl")
 
-search(bsp::Bsp, pos::Vector3) = search(bsp.tree, pos)
+search(bsp::Bsp, pos::AbstractVector) = search(bsp.tree, pos)
 
 end
 

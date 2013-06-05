@@ -11,10 +11,10 @@ const far = 16384
 projMatrix = eye(Matrix4x4{Float32})
 fov = 60.0
 
-function translationMatrix(pos::GL.Vec3)
-	x = pos.e1
-	y = pos.e2
-	z = pos.e3
+function translationMatrix(pos::AbstractVector)
+	x = pos[1]
+	y = pos[2]
+	z = pos[3]
 	Matrix4x4{Float32}(
 	Vector4{Float32}(1, 0, 0, 0),
 	Vector4{Float32}(0, 1, 0, 0),
@@ -231,22 +231,22 @@ GL.BindVertexArray(0)
 frames = 0
 tic()
 
-function rotationMatrix{T<:Real}(eyeDir::AbstractVector{T}, upDir::AbstractVector{T})
+function rotationMatrix(eyeDir::AbstractVector, upDir::AbstractVector)
 	rightDir = cross(eyeDir, upDir)
 	rightDir /= norm(rightDir)
 	upDir = cross(rightDir, eyeDir)
 
-	Xx = rightDir.e1
-	Xy = rightDir.e2
-	Xz = rightDir.e3
+	Xx = rightDir[1]
+	Xy = rightDir[2]
+	Xz = rightDir[3]
 
-	Yx = upDir.e1
-	Yy = upDir.e2
-	Yz = upDir.e3
+	Yx = upDir[1]
+	Yy = upDir[2]
+	Yz = upDir[3]
 
-	Zx = -eyeDir.e1
-	Zy = -eyeDir.e2
-	Zz = -eyeDir.e3
+	Zx = -eyeDir[1]
+	Zy = -eyeDir[2]
+	Zz = -eyeDir[3]
 
 	Matrix4x4{Float32}(
 	Vector4{Float32}(Xx, Yx, Zx,  0),
@@ -273,7 +273,7 @@ write(GL.Uniform(prog, "DiffuseMap"), int32(0))
 write(GL.Uniform(prog, "NormalMap"), int32(1))
 
 light1 = Player.State()
-Player.movedir!(light1, GL.Vec3(1,0,0), true)
+Player.movedir!(light1, [1,0,0], true)
 light1_pow = float32(0)
 
 draw_mode = 0

@@ -15,16 +15,16 @@ type Node
 	distance::Float32
 end
 
-cmp(pos::Vector3, node::Node) = sign(dot(pos,node.normal)-node.distance)
+cmp(node::Node, pos::AbstractVector) = sign(dot(pos,node.normal)-node.distance)
 
-function search(tree::Node, pos::Vector3)
-	if cmp(pos, tree) < 0
+function search(tree::Node, pos::AbstractVector)
+	if cmp(tree, pos) < 0
 		return search(tree.back, pos)
 	else
 		return search(tree.front, pos)
 	end
 end
-search(leaf::Leaf, ::Vector3) = leaf
+search(leaf::Leaf, ::AbstractVector) = leaf
 
 end
 
