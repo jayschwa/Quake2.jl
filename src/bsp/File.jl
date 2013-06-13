@@ -247,7 +247,7 @@ function read(io::IO, ::Type{Bsp})
 				print("[ ] ")
 			end
 
-			textures[texinfo.name] = Mesh.Texture(diffuse, normal, width, height, texinfo.flags)
+			textures[texinfo.name] = Mesh.Texture(texinfo.name, diffuse, normal, width, height, texinfo.flags)
 			println(texinfo.name)
 		end
 	end

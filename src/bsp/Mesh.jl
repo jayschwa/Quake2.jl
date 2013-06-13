@@ -4,6 +4,7 @@ importall ImmutableArrays
 import GL
 
 type Texture
+	name::String
 	diffuse::GL.Texture
 	normal::GL.Texture
 	width::Uint32
