@@ -15,7 +15,7 @@ end
 function calcuv(face, point)
 	point = cat(1, point, float32(1))
 	u = dot(face.u_axis, point) / face.texture.width
-	v = -dot(face.v_axis, point) / face.texture.height
+	v = dot(face.v_axis, point) / face.texture.height
 	return string("new THREE.Vector2(", vecstr([u, v]), ")")
 end
 
@@ -40,6 +40,7 @@ for f = bsp.faces
 		write(js, "var texture = THREE.ImageUtils.loadTexture( 'textures/"*f.texture.name*".png' );\n")
 		write(js, "texture.wrapS = THREE.RepeatWrapping;\n")
 		write(js, "texture.wrapT = THREE.RepeatWrapping;\n")
+		write(js, "texture.flipY = false;\n")
 		write(js, "material.materials.push(new THREE.MeshLambertMaterial( {map: texture} ));\n")
 		if f.texture.flags & 0x01 != 0 || f.texture.flags & 0x04 != 0
 			write(js, string("material.materials[", matidx, "].emissive.setHex(0xffffff);\n"))
