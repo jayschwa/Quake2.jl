@@ -11,6 +11,7 @@ type Bsp
 	tree::Tree.Node
 	entities::Vector{Dict{String,String}}
 	vertices::Vector{Vector3{Float32}}
+	faces::Vector{Mesh.Face}
 	max_lights::Int
 end
 

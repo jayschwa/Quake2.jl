@@ -12,14 +12,14 @@ type Texture
 end
 
 type Light
-	origin::Vector3{Float32}
-	color::Vector3{Float32}
-	power::Float32
-	Light(origin, color, power) = new(convert(Vector3{Float32}, origin), convert(Vector3{Float32}, color), convert(Float32, power))
+	origin
+	color
+	power
+	Light(origin, color, power) = new(float32(origin), float32(color), float32(power))
 end
 
 type Face
-	indices::Vector{Uint16}
+	indices
 	ibo::GL.Buffer
 	normal::Vector3{Float32}
 	texture::Texture

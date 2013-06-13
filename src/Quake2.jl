@@ -289,12 +289,12 @@ toggle_wireframe() = global wireframe_only = !wireframe_only
 
 function fire(apply::Bool)
 	if apply
-		light1.position = Player.self.position
-		light1.orientation = Player.self.orientation
-		light1.speed = 0
+		light1.position = float32(Player.self.position)
+		light1.orientation = float32(Player.self.orientation)
+		light1.speed = float32(0)
 		global light1_pow = float32(300)
 	else
-		light1.speed = 300
+		light1.speed = float32(300)
 	end
 end
 
@@ -372,7 +372,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 	write(uSpecular, specular_lighting_on)
 
 	write(lightUniforms[1], light1.position)
-	write(lightUniforms[2], GL.Vec3(1.0, 1.0, 0.0))
+	write(lightUniforms[2], Float32[1.0, 1.0, 0.0])
 	write(lightUniforms[3], light1_pow)
 
 	GL.BindVertexArray(vao)

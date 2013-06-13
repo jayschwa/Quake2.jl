@@ -257,7 +257,7 @@ function read(io::IO, ::Type{Bsp})
 	faces = Array(Mesh.Face,0)
 	for face = bin_faces
 
-		indices = Array(Uint16,0)
+		indices = Array(Int,0)
 		first = face.first_edge + 1
 		hub = bin_edges[abs(face2edge[first])+1].v1
 		last = first + face.num_edges - 1
@@ -474,7 +474,7 @@ function read(io::IO, ::Type{Bsp})
 	println("median: ", median(light_stats))
 	println("max:    ", max(light_stats))
 
-	return Bsp(tree, entities, bin_vertices, max(light_stats))
+	return Bsp(tree, entities, bin_vertices, faces, max(light_stats))
 end
 
 end
