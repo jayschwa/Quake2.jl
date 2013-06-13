@@ -32,11 +32,18 @@ for v = bsp.vertices
 end
 for f = bsp.faces
 
+	if f.texture.flags & 0x80 != 0 && f.texture.flags & 0x04 == 0
+		continue
+	end
+
 	if !haskey(materials, f.texture.name)
 		write(js, "var texture = THREE.ImageUtils.loadTexture( 'textures/"*f.texture.name*".png' );\n")
 		write(js, "texture.wrapS = THREE.RepeatWrapping;\n")
 		write(js, "texture.wrapT = THREE.RepeatWrapping;\n")
 		write(js, "material.materials.push(new THREE.MeshLambertMaterial( {map: texture} ));\n")
+		if f.texture.flags & 0x01 != 0
+			write(js, string("material.materials[", matidx, "].emissive.setHex(0xffffff);\n"))
+		end
 		materials[f.texture.name] = matidx
 		matidx += 1
 	end
