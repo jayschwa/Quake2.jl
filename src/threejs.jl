@@ -41,8 +41,13 @@ for f = bsp.faces
 		write(js, "texture.wrapS = THREE.RepeatWrapping;\n")
 		write(js, "texture.wrapT = THREE.RepeatWrapping;\n")
 		write(js, "material.materials.push(new THREE.MeshLambertMaterial( {map: texture} ));\n")
-		if f.texture.flags & 0x01 != 0
+		if f.texture.flags & 0x01 != 0 || f.texture.flags & 0x04 != 0
 			write(js, string("material.materials[", matidx, "].emissive.setHex(0xffffff);\n"))
+		end
+		if f.texture.flags & 0x30 != 0
+			write(js, string("material.materials[", matidx, "].transparent = true;\n"))
+			opacity = f.texture.flags & 0x10 != 0 ? 0.33 : 0.66
+			write(js, string("material.materials[", matidx, "].opacity = ", opacity,";\n"))
 		end
 		materials[f.texture.name] = matidx
 		matidx += 1
