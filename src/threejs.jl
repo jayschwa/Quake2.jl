@@ -15,7 +15,7 @@ end
 function calcuv(face, point)
 	point = cat(1, point, float32(1))
 	u = dot(face.u_axis, point) / face.texture.width
-	v = dot(face.v_axis, point) / face.texture.height
+	v = -dot(face.v_axis, point) / face.texture.height
 	return string("new THREE.Vector2(", vecstr([u, v]), ")")
 end
 
