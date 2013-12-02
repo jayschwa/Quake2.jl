@@ -39,7 +39,7 @@ Bump and parallax effects can be created by providing an optional height map. No
 
 ![Bump and parallax](pics/bump_parallax.jpg)
 
-The bump and parallax effects breathe new life into the original, low resolution Quake 2 textures.
+The bump and parallax effects breathe new life into the original, low resolution, Quake 2 textures.
 
 ![Diffuse](pics/diffuse.jpg)
 
