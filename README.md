@@ -1,7 +1,7 @@
 Quake2.jl
 =========
 
-Experimental Quake 2 map renderer written with [Julia](http://julialang.org/) and modern OpenGL.
+Experimental Quake 2 map renderer written with [Julia](http://julialang.org/) and modern OpenGL. Created at [Hacker School](https://www.hackerschool.com/). It is a toy and not actively developed.
 
 ![Screenshot](pics/q2dm7.jpg)
 
@@ -24,7 +24,7 @@ Requirements
   * [GL](https://github.com/jayschwa/GL.jl) (requires at least OpenGL 3.x)
 * Quake 2 game data (i.e. pak0.pak)
 
-Due to the fast-moving nature of Julia development and its packages, setting up an environment is not easy. In its current state, the code will likely not run outside the author's environment. Work is being done to fix this and make setup easier.
+Due to the fast-moving nature of Julia development and its packages, setting up an environment is not easy. In its current state, the code will likely not run outside the author's environment.
 
 Lighting
 --------
