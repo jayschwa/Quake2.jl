@@ -30,7 +30,7 @@ function scan(pakpath::String)
 	count = read(f, Uint32) / 64
 	seek(f, offset)
 	for i = 1:count
-		name = lowercase(rstrip(bytestring(read(f, Uint8, 56)), "\0"))
+		name = lowercase(rstrip(bytestring(read(f, Uint8, 56)), '\0'))
 		offset = read(f, Uint32)
 		len = read(f, Uint32)
 		pak_files[name] = PakFile(pakpath, offset, len)
@@ -50,12 +50,12 @@ function qopen(fname::String)
 			return file
 		catch err; end
 	end
-	if has(pak_files, fname)
+	if haskey(pak_files, fname)
 		file = pak_files[fname]
 		pak = open(file.pak)
 		seek(pak, file.off)
 		data = read(pak, Uint8, file.len)
-		close(file)
+		close(pak)
 		return IOBuffer(data)
 	end
 	error("could not open file ", fname)

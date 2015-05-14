@@ -50,21 +50,21 @@ function updateProjMatrix(width::Cint, height::Cint)
 end
 
 GLFW.Init()
-GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MAJOR, 3)
-GLFW.OpenWindowHint(GLFW.OPENGL_VERSION_MINOR, 2)
-GLFW.OpenWindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
-GLFW.OpenWindowHint(GLFW.OPENGL_FORWARD_COMPAT, 1)
-GLFW.OpenWindow(0, 0, 8, 8, 8, 0, 24, 0, GLFW.WINDOW)
-GLFW.SetWindowTitle("Quake 2.jl")
-GLFW.SetWindowSizeCallback(updateProjMatrix)
+GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
+GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
+GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
+GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, 1)
+window = GLFW.CreateWindow(800, 600, "Quake 2.jl")
+GLFW.MakeContextCurrent(window)
+GLFW.SetWindowSizeCallback(window, (_, w, h) -> updateProjMatrix(w, h))
 GLFW.SwapInterval(0)
 
-println("Red bits:     ", GLFW.GetWindowParam(GLFW.RED_BITS))
-println("Green bits:   ", GLFW.GetWindowParam(GLFW.GREEN_BITS))
-println("Blue bits:    ", GLFW.GetWindowParam(GLFW.BLUE_BITS))
-println("Alpha bits:   ", GLFW.GetWindowParam(GLFW.ALPHA_BITS))
-println("Depth bits:   ", GLFW.GetWindowParam(GLFW.DEPTH_BITS))
-println("Stencil bits: ", GLFW.GetWindowParam(GLFW.STENCIL_BITS))
+#println("Red bits:     ", GLFW.GetWindowAttrib(win, GLFW.RED_BITS))
+#println("Green bits:   ", GLFW.GetWindowAttrib(win, GLFW.GREEN_BITS))
+#println("Blue bits:    ", GLFW.GetWindowAttrib(win, GLFW.BLUE_BITS))
+#println("Alpha bits:   ", GLFW.GetWindowAttrib(win, GLFW.ALPHA_BITS))
+#println("Depth bits:   ", GLFW.GetWindowAttrib(win, GLFW.DEPTH_BITS))
+#println("Stencil bits: ", GLFW.GetWindowAttrib(win, GLFW.STENCIL_BITS))
 
 GL.Enable(GL.CULL_FACE)
 GL.Enable(GL.DEPTH_TEST)
@@ -129,7 +129,7 @@ uniform bool SpecularLighting;
 
 uniform vec3 AmbientLight;
 uniform int NumLights;
-uniform light_t Light[", maxLights, "];
+uniform light_t Light[$maxLights];
 
 uniform bool DiffuseMapping;
 uniform sampler2D DiffuseMap;
@@ -197,8 +197,9 @@ void main()
 }
 ")
 
-prog = GL.Program([GL.VERTEX_SHADER   => vertex_shader_src,
-                   GL.FRAGMENT_SHADER => fragment_shader_src])
+prog = GL.Program(Dict(
+	GL.VERTEX_SHADER   => vertex_shader_src,
+	GL.FRAGMENT_SHADER => fragment_shader_src))
 
 uModel = GL.Uniform(prog, "ModelMatrix")
 uView = GL.Uniform(prog, "ViewMatrix")
@@ -269,12 +270,12 @@ for i = 0:maxLights-1
 end
 
 GL.UseProgram(prog)
-write(GL.Uniform(prog, "DiffuseMap"), int32(0))
-write(GL.Uniform(prog, "NormalMap"), int32(1))
+write(GL.Uniform(prog, "DiffuseMap"), Int32(0))
+write(GL.Uniform(prog, "NormalMap"), Int32(1))
 
 light1 = Player.State()
 Player.movedir!(light1, GL.Vec3(1,0,0), true)
-light1_pow = float32(0)
+light1_pow = Float32(0)
 
 draw_mode = 0
 ambient_lighting_on = true
@@ -292,15 +293,15 @@ function fire(apply::Bool)
 		light1.position = Player.self.position
 		light1.orientation = Player.self.orientation
 		light1.speed = 0
-		global light1_pow = float32(300)
+		global light1_pow = Float32(300)
 	else
 		light1.speed = 300
 	end
 end
 
 bind(GLFW.MOUSE_BUTTON_LEFT, fire)
-bind(GLFW.MOUSE_BUTTON_RIGHT, in_grab)
-bind(GLFW.KEY_ESC, in_release)
+bind(GLFW.MOUSE_BUTTON_RIGHT, in_grab(window))
+bind(GLFW.KEY_ESCAPE, in_release(window))
 
 # WASD in Dvorak
 bind(',', forward)
@@ -308,8 +309,8 @@ bind('A', moveleft)
 bind('O', back)
 bind('E', moveright)
 bind(' ', moveup)
-bind(GLFW.KEY_LCTRL, movedown)
-bind(GLFW.KEY_LSHIFT, speed)
+bind(GLFW.KEY_LEFT_CONTROL, movedown)
+bind(GLFW.KEY_LEFT_SHIFT, speed)
 
 bind(GLFW.KEY_UP, lookup)
 bind(GLFW.KEY_DOWN, lookdown)
@@ -334,12 +335,14 @@ bind('8', toggle_specular_light)
 
 bind('[', toggle_wireframe)
 
-GLFW.SetKeyCallback(Input.event)
-GLFW.SetMouseButtonCallback(Input.event)
-GLFW.SetMousePosCallback(Input.look_event)
-GLFW.SetMouseWheelCallback(Input.wheel_event)
+GLFW.SetCursorPosCallback(window, Input.look_event)
+GLFW.SetKeyCallback(window, Input.event)
+GLFW.SetMouseButtonCallback(window, Input.event)
+GLFW.SetScrollCallback(window, Input.wheel_event)
 
-while GLFW.GetWindowParam(GLFW.OPENED)
+println("Loaded")
+
+while !GLFW.WindowShouldClose(window)
 
 	Player.move!(Player.self)
 	Player.move!(light1)
@@ -356,7 +359,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	write(uCamPos, Player.self.position)
 
-	write(uDrawMode, int32(draw_mode))
+	write(uDrawMode, Int32(draw_mode))
 	if wireframe_only
 		write(uAmbient, GL.Vec3(0.2, 0.2, 0.2))
 	elseif ambient_lighting_on
@@ -382,7 +385,7 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 		write(uTexW, face.texture.width)
 		write(uTexH, face.texture.height)
 
-		write(numLightsUniform, int32(length(face.lights)+1))
+		write(numLightsUniform, Int32(length(face.lights)+1))
 		i = 4
 		for light = face.lights
 			write(lightUniforms[i], light.origin); i += 1
@@ -408,8 +411,9 @@ while GLFW.GetWindowParam(GLFW.OPENED)
 
 	GL.BindVertexArray(0)
 
-	GLFW.SwapBuffers()
+	GLFW.SwapBuffers(window)
 	frames += 1
+	GLFW.PollEvents()
 end
 
 seconds = toc()

@@ -142,7 +142,7 @@ import Images.imread
 function imread{S<:IO}(io::S, ::Type{WAL})
 	# name of texture
 	seek(io, 0)
-	name = lowercase(rstrip(bytestring(read(io, Uint8, 32)),"\0"))
+	name = lowercase(rstrip(bytestring(read(io, Uint8, 32)),'\0'))
 
 	# size
 	width = read(io, Uint32)
@@ -152,7 +152,7 @@ function imread{S<:IO}(io::S, ::Type{WAL})
 	offset = read(io, Int32, 4)
 
 	# name of next texture (if animated)
-	next_name = lowercase(rstrip(bytestring(read(io, Uint8, 32)),"\0"))
+	next_name = lowercase(rstrip(bytestring(read(io, Uint8, 32)),'\0'))
 
 	flags = read(io, Uint32)
 	contents = read(io, Uint32)
@@ -170,7 +170,7 @@ function imread{S<:IO}(io::S, ::Type{WAL})
 		i += 3
 	end
 
-	prop = {"colorspace" => "RGB"}
+	prop = Dict("colorspace" => "RGB")
 	Image(pixels, prop)
 end
 

@@ -29,7 +29,7 @@ end
 
 export sphere2cartesian # TODO: put this in a better spot
 function sphere2cartesian(orientation::GL.Vec3)
-	orientation = degrees2radians(orientation)
+	orientation = deg2rad(orientation)
 	x = cos(orientation[1]) * cos(orientation[2])
 	y = cos(orientation[1]) * sin(orientation[2])
 	z = sin(orientation[1])

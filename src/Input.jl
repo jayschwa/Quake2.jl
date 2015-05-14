@@ -7,25 +7,28 @@ import GLFW
 import Player
 
 in_grabbed = false
-function in_grab()
-	GLFW.Disable(GLFW.MOUSE_CURSOR)
-	GLFW.SetMousePos(0, 0)
-	global in_grabbed = true
+function in_grab(window::GLFW.Window)
+	f() = begin
+		GLFW.SetInputMode(window, GLFW.CURSOR, GLFW.CURSOR_DISABLED)
+		global in_grabbed = true
+	end
 end
-function in_release()
-	global in_grabbed = false
-	GLFW.Enable(GLFW.MOUSE_CURSOR)
+function in_release(window::GLFW.Window)
+	f() = begin
+		global in_grabbed = false
+		GLFW.SetInputMode(window, GLFW.CURSOR, GLFW.CURSOR_NORMAL)
+	end
 end
 
 const MOUSE_WHEEL_DOWN = (GLFW.KEY_LAST+1)
 const MOUSE_WHEEL_UP   = (GLFW.KEY_LAST+2)
 
 bindlist = Dict{Int,Function}()
-bind(key::Integer) = get(bindlist, int(key), None)
-bind(key::Integer, action::Function) = setindex!(bindlist, action, int(key))
-unbind(key::Integer) = delete!(bindlist, int(key))
+bind(key) = get(bindlist, Int(key), None)
+bind(key, action::Function) = bindlist[Int(key)] = action
+unbind(key) = delete!(bindlist, Int(key))
 
-function event(key::Int, press::Bool)
+function event(key, press::Bool)
 	action = bind(key)
 	if action != None && (in_grabbed || action == in_grab)
 		if applicable(action, press)
@@ -36,30 +39,37 @@ function event(key::Int, press::Bool)
 	end
 end
 
-# GLFW key and mouse button callback
-function event(key::Cint, press::Cint)
-	event(int(key), press == 1)
+# GLFW key callback
+function event(window::GLFW.Window, key::Cint, scancode::Cint, action::Cint, mods::Cint)
+	event(key, action == 1)
 	return
 end
 
-# GLFW mouse wheel callback
-function wheel_event(val::Cint)
-	if val < 0
+# GLFW cursor button callback
+function event(window::GLFW.Window, button::Cint, action::Cint, mods::Cint)
+	event(button, action == 1)
+	return
+end
+
+# GLFW scroll callback
+last_wheel_offset = 0.0
+function wheel_event(window::GLFW.Window, xoffset::Cdouble, yoffset::Cdouble)
+	if yoffset < last_wheel_offset
 		event(MOUSE_WHEEL_DOWN, true)
-	elseif val > 0
+	elseif yoffset > last_wheel_offset
 		event(MOUSE_WHEEL_UP, true)
 	end
-	GLFW.SetMouseWheel(0)
+	global last_wheel_offset = yoffset
 	return
 end
 
 m_pitch = 0.05
 m_yaw = 0.05
 
-function look_event(x::Cint, y::Cint)
+function look_event(window::GLFW.Window, x::Cdouble, y::Cdouble)
 	if in_grabbed && (x != 0 || y != 0)
 		Player.lookdir!(Player.self, m_pitch * -y, m_yaw * -x)
-		GLFW.SetMousePos(0, 0)
+		GLFW.SetCursorPos(window, 0, 0)
 	end
 	return
 end

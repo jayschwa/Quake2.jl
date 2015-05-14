@@ -60,8 +60,8 @@ function islit(face::Face, vertices::Vector{Vertex}, light::Light)
 	for tri = 0:floor(length(face.indices)/3)-1
 		inside_triangle = true
 		for edge = 0:2
-			i1 = tri*3+edge+1
-			i2 = tri*3+(edge+1)%3+1
+			i1 = Int(tri*3+edge+1)
+			i2 = Int(tri*3+(edge+1)%3+1)
 			v1 = vertices[face.indices[i1]+1]
 			v2 = vertices[face.indices[i2]+1]
 			edge_normal = cross(face.normal, v1-v2)

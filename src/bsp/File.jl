@@ -105,12 +105,12 @@ immutable TexInfo
 	name::ASCIIString
 	next::Uint32
 end
-function read(io, ::Type{TexInfo})
+function readtexinfo(io, ::Type{TexInfo})
 	u = read(io, Vector4{Float32})
 	v = read(io, Vector4{Float32})
 	flags = read(io, Uint32)
 	value = read(io, Uint32)
-	name = lowercase(rstrip(bytestring(read(io, Uint8, 32)), "\0"))
+	name = lowercase(rstrip(bytestring(read(io, Uint8, 32)), '\0'))
 	next = read(io, Uint32)
 	return TexInfo(u,v,flags,value,name,next)
 end
@@ -137,13 +137,22 @@ end
 
 function readlump(io::IO, lump::Lump, t::Type)
 	seek(io, lump.offset)
-	read(io, t, int(lump.length / sizeof(t)))
+	sz = Int(lump.length / sizeof(t))
+	if t == TexInfo
+		arr = TexInfo[]
+		for i = 1:sz
+			push!(arr, readtexinfo(io, TexInfo))
+		end
+		return arr
+	else
+		return read(io, t, sz)
+	end
 end
 
 function readheightmap(name::String)
 	img = imread(string("/home/jay/q2renew/textures/", name, ".height.png"))
 	width, height = size(img)[2:3]
-	gray = uint8(convert(Array, img))[:,:,1]
+	gray = Array{UInt8}(convert(Array, img))[:,:,1]
 	handle = GL.GenTexture()
 
 	# create normals from heights
@@ -158,7 +167,7 @@ function readheightmap(name::String)
 			y = int(gray[wp,h] - gray[wn,h]) / 32.0
 			n = Vector3(x,y,1.0)
 			n /= norm(n)
-			n = uint8(n * (255/2) + (255/2))
+			n = UInt8(n * (255/2) + (255/2))
 			push!(normals, n[1])
 			push!(normals, n[2])
 			push!(normals, n[3])
@@ -215,7 +224,7 @@ function read(io::IO, ::Type{Bsp})
 
 	textures = Dict{String,Mesh.Texture}()
 	for texinfo = bin_texinfos
-		if !has(textures, texinfo.name)
+		if !haskey(textures, texinfo.name)
 			if texinfo.flags > 0
 				println(texinfo.flags, ", ", texinfo.value)
 			end
@@ -224,13 +233,13 @@ function read(io::IO, ::Type{Bsp})
 			img = imread(f, Textures.WAL)
 			close(f)
 
-			width = uint32(size(img)[2])
-			height = uint32(size(img)[3])
+			width = UInt32(size(img)[2])
+			height = UInt32(size(img)[3])
 			diffuse = GL.GenTexture()
 
 			# upload image data to GPU
 			GL.BindTexture(GL.TEXTURE_2D, diffuse)
-			GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, width, height, GL.RGB, uint8(img[:]))
+			GL.TexImage2D(GL.TEXTURE_2D, GL.RGB, width, height, GL.RGB, Array{UInt8}(img[:]))
 			GL.GenerateMipmap(GL.TEXTURE_2D)
 			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR)
 			GL.TexParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR)
@@ -303,14 +312,14 @@ function read(io::IO, ::Type{Bsp})
 		last = first + leaf.num_faces - 1
 		for i = leaf2face[first:last]
 			face = faces[i+1]
-			if contains(leaf_faces, face)
+			if face in leaf_faces
 				warn("duplicate face in leaf")
 			else
 				push!(leaf_faces, face)
 			end
 		end
 		c = leaf.cluster
-		if !has(leaves_in_cluster, c)
+		if !haskey(leaves_in_cluster, c)
 			leaves_in_cluster[c] = Array(Tree.Leaf,0)
 		end
 		leaf = Tree.Leaf(leaf_faces)
@@ -338,7 +347,7 @@ function read(io::IO, ::Type{Bsp})
 		c = tup[1]                   # this cluster index
 		visible_faces = copy(tup[2])
 
-		if c == uint16(-1)
+		if c == 0xffff
 			continue
 		end
 
@@ -350,7 +359,7 @@ function read(io::IO, ::Type{Bsp})
 				k += 8 * bin_vis[v]
 			else
 				for bit = 0:7
-					if bin_vis[v] & (1 << bit) != 0 && has(faces_in_cluster, k)
+					if bin_vis[v] & (1 << bit) != 0 && haskey(faces_in_cluster, k)
 						for face = faces_in_cluster[k]
 							push!(visible_faces, face)
 						end
@@ -366,7 +375,7 @@ function read(io::IO, ::Type{Bsp})
 	for i = 1:length(leaves)
 		leaf = leaves[i]
 		c = bin_leaves[i].cluster
-		if c != uint16(-1)
+		if c != 0xffff
 			leaf.faces = faces_from_cluster[c]
 		else
 			leaf.faces = faces
@@ -393,13 +402,13 @@ function read(io::IO, ::Type{Bsp})
 		dict = Dict{String, String}()
 		for field = split(entity, '\n')
 			fieldStr = split(strip(field), "\" \"")
-			name = lstrip(strip(fieldStr[1], '"'), "_")
+			name = lstrip(strip(fieldStr[1], '"'), '_')
 			value = strip(fieldStr[2], '"')
 			dict[name] = value
 		end
 		if length(dict) < 1
 			continue
-		elseif !has(dict, "classname")
+		elseif !haskey(dict, "classname")
 			warn("entity has no classname")
 			continue
 		else
@@ -414,24 +423,24 @@ function read(io::IO, ::Type{Bsp})
 		if ent["classname"] != "light"
 			continue
 		end
-		if has(ent, "origin")
+		if haskey(ent, "origin")
 			origin = split(ent["origin"])
-			origin = Vector3{Float32}(float32(origin[1]), float32(origin[2]), float32(origin[3]))
+			origin = Vector3{Float32}(parse(Float32,origin[1]), parse(Float32,origin[2]), parse(Float32,origin[3]))
 		else
 			warn("light has no origin")
 			continue
 		end
-		if has(ent, "color")
+		if haskey(ent, "color")
 			color = split(ent["color"])
-			color = Vector3{Float32}(float32(color[1]), float32(color[2]), float32(color[3]))
-			color /= max(color)
+			color = Vector3{Float32}(parse(Float32,color[1]), parse(Float32,color[2]), parse(Float32,color[3]))
+			color /= maximum(color)
 		else
 			color = Vector3{Float32}(1.0, 1.0, 1.0)
 		end
-		if has(ent, "light")
-			power = float32(ent["light"])
+		if haskey(ent, "light")
+			power = parse(Float32,ent["light"])
 		else
-			power = float32(300)
+			power = Float32(300)
 		end
 		power *= 1.5
 		push!(lights, Mesh.Light(origin, color, power))
@@ -442,7 +451,7 @@ function read(io::IO, ::Type{Bsp})
 	for light = lights
 		for face = search(tree, light.origin).faces
 			lit = Mesh.islit(face, bin_vertices, light)
-			if lit && !contains(face.lights, light)
+			if lit && !(light in face.lights)
 				push!(face.lights, light)
 			end
 		end
@@ -457,10 +466,10 @@ function read(io::IO, ::Type{Bsp})
 		end
 	end
 	println("visible faces per non-empty leaf:")
-	println("min:    ", min(leaf_stats))
+	println("min:    ", minimum(leaf_stats))
 	println("mean:   ", mean(leaf_stats))
 	println("median: ", median(leaf_stats))
-	println("max:    ", max(leaf_stats))
+	println("max:    ", maximum(leaf_stats))
 
 	###   Calculate light statistics   #########################################
 
@@ -469,12 +478,12 @@ function read(io::IO, ::Type{Bsp})
 		push!(light_stats, length(face.lights))
 	end
 	println("lights per face:")
-	println("min:    ", min(light_stats))
+	println("min:    ", minimum(light_stats))
 	println("mean:   ", mean(light_stats))
 	println("median: ", median(light_stats))
-	println("max:    ", max(light_stats))
+	println("max:    ", maximum(light_stats))
 
-	return Bsp(tree, entities, bin_vertices, max(light_stats))
+	return Bsp(tree, entities, bin_vertices, maximum(light_stats))
 end
 
 end
